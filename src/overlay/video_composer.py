@@ -2,11 +2,11 @@ import subprocess
 import tempfile
 from io import BytesIO
 from pathlib import Path
-
 from imageio_ffmpeg import get_ffmpeg_exe
 from PIL import Image
 
 from src.config import Config
+from src.config.ffmpeg_config import FFmpegConfig
 
 
 class VideoComposer:
@@ -93,7 +93,15 @@ class VideoComposer:
             overlay_path,
             "-filter_complex",
             "overlay=0:0",
-            "-c",
+            "-c:v",
+            FFmpegConfig.get_video_codec(),
+            "-preset",
+            FFmpegConfig.get_ffmpeg_preset(),
+            "-crf",
+            FFmpegConfig.get_video_crf(),
+            "-pix_fmt",
+            FFmpegConfig.get_video_pixel_format(),
+            "-c:a",
             "copy",
             str(self.output_path),
         ]
