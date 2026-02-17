@@ -26,11 +26,13 @@ Download all your Snapchat memories with metadata (date, location) embedded dire
 
 ## 🚀 Quick Start
 
-### Step 1: Get Your Snapchat Data
 
-1. Login and export your data from Snapchat: https://accounts.snapchat.com/accounts/downloadmydata
-2. Select **both** options: `Export your Memories`, `Export JSON Files`
-3. Extract the ZIP file and place `memories_history.json` into the `data/` folder
+### Step 1: Download Your Snapchat Data
+
+1. Go to [Snapchat Data Download](https://accounts.snapchat.com/accounts/downloadmydata).
+2. Log in to the Snapchat account you want to extract memories from.
+3. Select **both** options: `Export your Memories` and `Export JSON Files`.
+
 
 ### Step 2: Clone the Repository
 
@@ -39,7 +41,16 @@ git clone https://github.com/Reelinq/snapchat-memories-extractor.git
 cd snapchat-memories-extractor
 ```
 
-### Step 3: Create Virtual Environment
+
+### Step 3: Extract the ZIP FileX
+
+Once your Snapchat data export is ready and downloaded:
+
+1. Extract the ZIP file you received from Snapchat.
+2. Find the file named `memories_history.json` inside the extracted contents.
+3. You can either move this file into the `/data` folder (if you wish), or simply specify the absolute path to the JSON file using the `--memories-json` (or `-mj`) flag when running the extractor.
+
+### Step 4: Create a Virtual Environment
 
 **Windows (PowerShell):**
 ```powershell
@@ -50,28 +61,33 @@ python -m venv .venv
 **macOS/Linux:**
 ```bash
 python3 -m venv .venv
-source .venv/Scripts/activate
+source .venv/bin/activate
 ```
 
-### Step 4: Install Dependencies
+
+### Step 5: Install Dependencies
 
 **All platforms:**
+
 ```bash
 pip install -r requirements.txt
 ```
 
-**macOS only - Install JPEG XL tools:**
+**macOS only – Install JPEG XL tools:**
+
 ```bash
 brew install jpeg-xl
 ```
 
 > **Note:** On macOS, the JPEG XL converter (`cjxl`) is installed via Homebrew. On Windows and Linux, pre-compiled binaries are included in the repository.
 
-### Step 5: Run the Extractor
+
+### Step 6: Run the Extractor
 
 ```bash
-python main.py
+python main.py --memories-json /path/to/memories_history.json
 ```
+
 
 **Done!** Your files will be saved to `downloads/` with full metadata embedded.
 
