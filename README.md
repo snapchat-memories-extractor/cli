@@ -81,6 +81,12 @@ brew install jpeg-xl
 
 > **Note:** On macOS, the JPEG XL converter (`cjxl`) is installed via Homebrew. On Windows and Linux, pre-compiled binaries are included in the repository.
 
+**Linux only – Make the `cjxl` binary executable:**
+
+```bash
+chmod +x libjxl-binaries/linux/cjxl
+```
+
 
 ### Step 6: Run the Extractor
 
