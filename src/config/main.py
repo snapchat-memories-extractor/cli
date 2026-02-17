@@ -8,7 +8,7 @@ from src.config.paths import ensure_directories
 
 @dataclass
 class Config:
-    json_path: Path = Path("data/memories_history.json")
+    json_path: Path = None
     downloads_folder: Path = Path("downloads")
     logs_folder: Path = Path("logs")
     cli_options: dict = None
@@ -20,7 +20,14 @@ class Config:
     def initialize_config(cls) -> None:
         args = get_cli_args()
         cls.cli_options = build_cli_options(args)
+        cls.json_path = cls.get_memories_json_path()
         cls._ensure_directories()
+
+    @classmethod
+    def get_memories_json_path(cls) -> Path:
+        if cls.cli_options["memories_json"]:
+            return Path(cls.cli_options["memories_json"])
+        return Path("data/memories_history.json")
 
     @classmethod
     def _ensure_directories(cls) -> None:

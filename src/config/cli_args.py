@@ -13,6 +13,14 @@ def crf_type(value: str) -> int:
 def get_cli_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Snapchat Memories Downloader")
     parser.add_argument(
+        "--memories-json",
+        "-mj",
+        type=str,
+        default=None,
+        metavar="PATH",
+        help="Path to the memories JSON file (default: /data/memories_history.json). Short: -mj",
+    )
+    parser.add_argument(
         "--ffmpeg-timeout",
         "-f",
         type=int,

@@ -5,6 +5,7 @@ from src.config.logging_config import parse_log_level
 
 def build_cli_options(args: argparse.Namespace) -> dict:
     return {
+        "memories_json": args.memories_json,
         "max_concurrent_downloads": args.concurrent,
         "apply_overlay": not args.no_overlay,
         "write_metadata": not args.no_metadata,
