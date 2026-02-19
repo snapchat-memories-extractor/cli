@@ -137,6 +137,38 @@ python main.py --memories-json C:\Users\user\Downloads\memories_history.json
 </details>
 
 <details>
+<summary><b>📁 Output Directory: -o / --output PATH</b></summary>
+
+**What it does:**
+- Sets a custom output directory for all downloaded and processed files
+- **Default**: `downloads/` (relative to the project root)
+- The directory will be created automatically if it doesn't exist
+
+**Examples**:
+
+Use default output directory (`downloads/`):
+```bash
+python main.py
+```
+
+Save to a custom directory:
+```bash
+python main.py -o /home/user/Pictures/snapchat
+python main.py --output C:\Users\user\Pictures\snapchat
+```
+
+Save to an external drive:
+```bash
+python main.py -o /mnt/external/snapchat-backup
+```
+
+**💡 Recommendations:**
+- **Default**: Good for keeping everything within the project folder
+- **Custom path**: Use `-o` to save directly to your photo library or an external drive
+
+</details>
+
+<details>
 <summary><b>�🔄 Concurrent Downloads: -c / --concurrent N</b></summary>
 
 **What it does:**
