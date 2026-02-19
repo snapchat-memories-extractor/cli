@@ -90,6 +90,12 @@ chmod +x libjxl-binaries/linux/cjxl
 
 ### Step 6: Run the Extractor
 
+If you moved `memories_history.json` into the `/data` folder:
+```bash
+python main.py
+```
+
+Or specify the path directly:
 ```bash
 python main.py --memories-json /path/to/memories_history.json
 ```
