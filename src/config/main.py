@@ -26,6 +26,12 @@ class Config:
         cls._ensure_directories()
 
     @classmethod
+    def get_memories_json_path(cls) -> Path:
+        if cls.cli_options["memories_json"]:
+            return Path(cls.cli_options["memories_json"])
+        return Path("data/memories_history.json")
+
+    @classmethod
     def get_output_folder(cls) -> Path:
         if cls.cli_options["output"]:
             return Path(cls.cli_options["output"])
@@ -36,12 +42,6 @@ class Config:
         if cls.cli_options["logs_path"]:
             return Path(cls.cli_options["logs_path"])
         return Path("logs")
-
-    @classmethod
-    def get_memories_json_path(cls) -> Path:
-        if cls.cli_options["memories_json"]:
-            return Path(cls.cli_options["memories_json"])
-        return Path("data/memories_history.json")
 
     @classmethod
     def _ensure_directories(cls) -> None:
