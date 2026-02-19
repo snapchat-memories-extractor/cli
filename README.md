@@ -168,8 +168,33 @@ python main.py -o /mnt/external/snapchat-backup
 
 </details>
 
-<details>
-<summary><b>�🔄 Concurrent Downloads: -c / --concurrent N</b></summary>
+<details><summary><b>📂 Logs Directory: -lp / --logs-path PATH</b></summary>
+
+**What it does:**
+- Sets a custom directory for log files
+- **Default**: `logs/` (relative to the project root)
+- The directory will be created automatically if it doesn't exist
+
+**Examples**:
+
+Use default logs directory (`logs/`):
+```bash
+python main.py
+```
+
+Save logs to a custom directory:
+```bash
+python main.py -lp /home/user/logs/snapchat
+python main.py --logs-path C:\Users\user\logs\snapchat
+```
+
+**💡 Recommendations:**
+- **Default**: Good for keeping logs within the project folder
+- **Custom path**: Use `-lp` if you want to centralize logs or store them on a different drive
+
+</details>
+
+<details><summary><b>�🔄 Concurrent Downloads: -c / --concurrent N</b></summary>
 
 **What it does:**
 - Controls the number of simultaneous downloads
