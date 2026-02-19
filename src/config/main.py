@@ -24,6 +24,12 @@ class Config:
         cls._ensure_directories()
 
     @classmethod
+    def get_output_folder(cls) -> Path:
+        if cls.cli_options["output"]:
+            return Path(cls.cli_options["output"])
+        return Path("downloads")
+
+    @classmethod
     def get_memories_json_path(cls) -> Path:
         if cls.cli_options["memories_json"]:
             return Path(cls.cli_options["memories_json"])

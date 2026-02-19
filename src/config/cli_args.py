@@ -21,6 +21,14 @@ def get_cli_args() -> argparse.Namespace:
         help="Path to the memories JSON file (default: /data/memories_history.json). Short: -mj",
     )
     parser.add_argument(
+        "--output",
+        "-o",
+        type=str,
+        default=None,
+        metavar="PATH",
+        help="Custom output directory for downloaded files (default: ./downloads). Short: -o",
+    )
+    parser.add_argument(
         "--ffmpeg-timeout",
         "-f",
         type=int,
