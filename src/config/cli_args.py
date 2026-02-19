@@ -29,6 +29,14 @@ def get_cli_args() -> argparse.Namespace:
         help="Custom output directory for downloaded files (default: ./downloads). Short: -o",
     )
     parser.add_argument(
+        "--logs-path",
+        "-lp",
+        type=str,
+        default=None,
+        metavar="PATH",
+        help="Custom directory for log files (default: ./logs). Short: -lp",
+    )
+    parser.add_argument(
         "--ffmpeg-timeout",
         "-f",
         type=int,

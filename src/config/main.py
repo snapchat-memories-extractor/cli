@@ -10,7 +10,7 @@ from src.config.paths import ensure_directories
 class Config:
     json_path: Path = None
     output_folder: Path = Path("output")
-    logs_folder: Path = Path("logs")
+    logs_folder: Path = None
     cli_options: dict = None
 
     def __post_init__(self) -> None:
@@ -21,6 +21,7 @@ class Config:
         args = get_cli_args()
         cls.cli_options = build_cli_options(args)
         cls.json_path = cls.get_memories_json_path()
+        cls.logs_folder = cls.get_logs_folder()
         cls._ensure_directories()
 
     @classmethod
@@ -28,6 +29,12 @@ class Config:
         if cls.cli_options["output"]:
             return Path(cls.cli_options["output"])
         return Path("downloads")
+
+    @classmethod
+    def get_logs_folder(cls) -> Path:
+        if cls.cli_options["logs_path"]:
+            return Path(cls.cli_options["logs_path"])
+        return Path("logs")
 
     @classmethod
     def get_memories_json_path(cls) -> Path:

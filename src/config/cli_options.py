@@ -7,6 +7,7 @@ def build_cli_options(args: argparse.Namespace) -> dict:
     return {
         "memories_json": args.memories_json,
         "output": args.output,
+        "logs_path": args.logs_path,
         "max_concurrent_downloads": args.concurrent,
         "apply_overlay": not args.no_overlay,
         "write_metadata": not args.no_metadata,
