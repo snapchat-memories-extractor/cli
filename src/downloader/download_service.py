@@ -58,7 +58,7 @@ class DownloadService:
         return content_type.lower() == "application/zip"
 
     def _store_downloaded_memory(self, download_response: Response) -> Path:
-        file_path = Config.downloads_folder / self.memory.filename_with_ext
+        file_path = Config.output_folder / self.memory.filename_with_ext
 
         if file_path.exists():
             file_path = FileNameResolver(file_path).run()

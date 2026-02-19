@@ -9,12 +9,12 @@ from src.config.paths import ensure_directories
 @dataclass
 class Config:
     json_path: Path = None
-    downloads_folder: Path = Path("downloads")
+    output_folder: Path = Path("output")
     logs_folder: Path = Path("logs")
     cli_options: dict = None
 
     def __post_init__(self) -> None:
-        ensure_directories(self.downloads_folder, self.logs_folder)
+        ensure_directories(self.output_folder, self.logs_folder)
 
     @classmethod
     def initialize_config(cls) -> None:
@@ -31,5 +31,5 @@ class Config:
 
     @classmethod
     def _ensure_directories(cls) -> None:
-        cls.downloads_folder.mkdir(parents=True, exist_ok=True)
+        cls.output_folder.mkdir(parents=True, exist_ok=True)
         cls.logs_folder.mkdir(parents=True, exist_ok=True)
