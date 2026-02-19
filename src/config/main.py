@@ -9,7 +9,7 @@ from src.config.paths import _ensure_directories
 @dataclass
 class Config:
     json_path: Path = None
-    output_folder: Path = Path("output")
+    output_folder: Path = None
     logs_folder: Path = None
     cli_options: dict = None
 
