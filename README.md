@@ -110,7 +110,34 @@ python main.py --memories-json /path/to/memories_history.json
 ### ⚙️ Normal Options
 
 <details>
-<summary><b>🔄 Concurrent Downloads: -c / --concurrent N</b></summary>
+<summary><b>� Memories JSON Path: -mj / --memories-json PATH</b></summary>
+
+**What it does:**
+- Specifies the path to the `memories_history.json` file exported from Snapchat
+- **Default**: `data/memories_history.json` (relative to the project root)
+- If you placed the file in the `/data` folder, you don't need this flag at all
+
+**Examples**:
+
+Use default path (`data/memories_history.json`):
+```bash
+python main.py
+```
+
+Specify a custom path:
+```bash
+python main.py -mj /home/user/Downloads/memories_history.json
+python main.py --memories-json C:\Users\user\Downloads\memories_history.json
+```
+
+**💡 Recommendations:**
+- **Default**: Simply move the file to the `data/` folder and run without this flag
+- **Custom path**: Use `-mj` if you don't want to move the file or have multiple exports
+
+</details>
+
+<details>
+<summary><b>�🔄 Concurrent Downloads: -c / --concurrent N</b></summary>
 
 **What it does:**
 - Controls the number of simultaneous downloads
