@@ -21,6 +21,7 @@ class Config:
         args = get_cli_args()
         cls.cli_options = build_cli_options(args)
         cls.json_path = cls.get_memories_json_path()
+        cls.output_folder = cls.get_output_folder()
         cls.logs_folder = cls.get_logs_folder()
         cls._ensure_directories()
 
