@@ -381,38 +381,31 @@ python main.py -q 75
 </details>
 
 <details>
-<summary><b>🎨 JPGXL Conversion: -J / --no-jxl</b></summary>
+<summary><b>🎨 JPGXL Conversion: -J / --jxl</b></summary>
 
 **What it does:**
-- **By default**, downloaded JPEG images are automatically converted to the modern **JPGXL (JXL)** format
+- **By default**, downloaded JPEG images are kept in their original **JPEG** format
+- Use `--jxl` to convert JPEG images to the modern **JPGXL (JXL)** format
 - JPGXL provides lossless compression with typically **20-40% better compression** than JPEG
 - All metadata (date, GPS coordinates, image properties) is preserved during conversion
-- Use `--no-jxl` if you prefer to keep original JPEG files without conversion
-
-**Key Features:**
-- ✅ **Lossless conversion**: No quality loss (bit-perfect from the original)
-- ✅ **Better compression**: Smaller files than JPEG while maintaining perfect quality
-- ✅ **Metadata preservation**: All EXIF data is preserved
-- ✅ **Zero quality loss**: Guaranteed identical pixel data in lossless format
-- ✅ **Modern format**: Uses the official libjxl codec from https://github.com/libjxl/libjxl
 
 **Examples**:
 
-Default behavior - automatically converts JPEG to lossless JPGXL:
+Default behavior - keep original JPEG files:
 ```bash
 python main.py
 ```
 
-Skip JPGXL conversion - keep original JPEG files:
+Enable JPGXL conversion - convert JPEG to lossless JPGXL:
 ```bash
 python main.py -J
 # or
-python main.py --no-jxl
+python main.py --jxl
 ```
 
 **💡 Recommendations:**
-- **Default (with JXL conversion)**: Best for storage, archival, and modern photo libraries. Saves 20-40% space with perfect quality.
-- **With `--no-jxl`**: Use if you need JPEG compatibility with older devices/applications that don't support JPGXL
+- **Default (no conversion)**: Best compatibility with all devices and applications.
+- **With `--jxl`**: Best for storage, archival, and modern photo libraries. Saves 20-40% space with perfect quality.
 
 **File Size Comparison:**
 
@@ -426,7 +419,7 @@ Example image (4000x3000 photo):
 - Preserves: All EXIF metadata, GPS coordinates, timestamps
 - Skips: Videos and non-JPEG images
 
-> **Note**: JPGXL conversion happens after metadata is written, ensuring all date and location information is embedded before conversion.
+> ⚠️ **Compatibility Warning:** JPGXL is not yet widely supported by most photo gallery apps, cloud services, and operating system viewers. You may not be able to open `.jxl` files directly in apps like Google Photos, Apple Photos, or Windows Photos. Use this option only if your workflow already supports JPGXL.
 
 </details>
 

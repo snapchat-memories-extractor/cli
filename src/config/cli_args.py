@@ -99,12 +99,12 @@ def get_cli_args() -> argparse.Namespace:
         help="JPEG quality 1-100 (default: 95). Short: -q",
     )
     parser.add_argument(
-        "--no-jxl",
+        "--jxl",
         "-J",
         default=False,
         action="store_true",
-        help="Skip JPGXL conversion and keep original JPEG \
-            (default: convert to lossless JPGXL). Short: -J",
+        help="Convert JPEG to lossless JPGXL \
+            (default: keep original JPEG). Short: -J",
     )
     parser.add_argument(
         "--video-codec",
