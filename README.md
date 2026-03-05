@@ -198,25 +198,25 @@ python main.py --logs-path C:\Users\user\logs\snapchat
 
 **What it does:**
 - Controls the number of simultaneous downloads
-- **Default**: `5` concurrent downloads
+- **Default**: `10` concurrent downloads
 - Higher values = faster downloads, but may trigger rate limiting
 - Lower values = slower but more stable
 
 **Examples**:
 
-Use default (5 concurrent downloads):
+Use default (10 concurrent downloads):
 ```bash
 python main.py
 ```
 
-Conservative - 3 concurrent downloads:
+Conservative - 5 concurrent downloads:
 ```bash
-python main.py -c 3
+python main.py -c 5
 ```
 
-Faster - 10 concurrent downloads:
+Faster - 15 concurrent downloads:
 ```bash
-python main.py -c 10
+python main.py -c 15
 ```
 
 Sequential - 1 download at a time (slowest, but safest):
@@ -225,9 +225,9 @@ python main.py -c 1
 ```
 
 **💡 Recommendations:**
-- **3-5 concurrent downloads**: Safe default, respectful to Snapchat's servers
-- **10-15 concurrent downloads**: Faster, works well on most home connections
-- **20+ concurrent downloads**: May trigger rate limiting or server throttling
+- **5-10 concurrent downloads**: Safe default, respectful to Snapchat's servers
+- **15-25 concurrent downloads**: Faster, works well on most home connections
+- **25+ concurrent downloads**: May trigger rate limiting or server throttling
 - **1 concurrent download**: Use only if experiencing connection issues
 
 > ⚠️ **Note**: Setting too high may result in rate limiting or failed downloads. If you experience issues, reduce the concurrent value.

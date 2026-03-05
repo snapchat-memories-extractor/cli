@@ -56,9 +56,9 @@ def get_cli_args() -> argparse.Namespace:
         "--concurrent",
         "-c",
         type=int,
-        default=5,
+        default=10,
         metavar="N",
-        help="Concurrent downloads (default: 5). Short: -c",
+        help="Concurrent downloads (default: 10). Short: -c",
     )
     parser.add_argument(
         "--no-overlay",
