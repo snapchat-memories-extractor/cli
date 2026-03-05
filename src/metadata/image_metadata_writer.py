@@ -3,7 +3,7 @@ from pathlib import Path
 import piexif
 from PIL import Image
 
-from src.config import Config
+from src.media_dispatcher.image_saver import save_image
 from src.memories import Memory
 
 
@@ -71,8 +71,5 @@ class ImageMetadataWriter:
         )
 
     def _save_image_with_exif(self) -> None:
-        quality = Config.cli_options["jpeg_quality"]
         exif_data_bytes = piexif.dump(self.exif_metadata)
-
-        with Image.open(self.file_path) as image:
-            image.save(str(self.file_path), exif=exif_data_bytes, quality=quality)
+        save_image(self.file_path, exif_bytes=exif_data_bytes)
