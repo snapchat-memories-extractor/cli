@@ -524,7 +524,7 @@ python main.py -fp ultrafast
 
 **What it does:**
 - Sets the pixel format for video encoding in FFmpeg, which affects compatibility, color depth, and file size.
-- **Formats:** `yuv420p`, `rgb24`, `rgba`, `nv12`, `yuv422p`, `yuv444p`, `bgr24`, `gray`, `yuyv422`, `p010le`, `yuv420p10le`, `nv21`, `bgra`, `argb`
+- **Formats:** `argb`, `bgr24`, `bgra`, `gray`, `nv12`, `nv21`, `p010le`, `rgb24`, `rgba`, `yuv420p`, `yuv420p10le`, `yuv422p`, `yuv444p`, `yuyv422`
 - **Default:** `yuv420p` (widest compatibility)
 
 **Examples**:
