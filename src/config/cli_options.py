@@ -23,6 +23,11 @@ def build_cli_options(args: argparse.Namespace) -> dict:
         "ffmpeg_pixel_format": args.ffmpeg_pixel_format,
         "video_codec": args.video_codec,
         "av1_encoder": args.av1_encoder,
+        "av1_preset": args.av1_preset,
+        "av1_cpu_used": args.av1_cpu_used,
+        "av1_tile_columns": args.av1_tile_columns,
+        "av1_tile_rows": args.av1_tile_rows,
+        "av1_row_mt": args.av1_row_mt,
         "crf": args.constant_rate_factor,
         "cjxl_timeout": args.cjxl_timeout,
     }

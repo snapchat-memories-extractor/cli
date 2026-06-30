@@ -24,3 +24,19 @@ class FFmpegConfig:
     @staticmethod
     def get_video_pixel_format() -> str:
         return Config.cli_options["ffmpeg_pixel_format"]
+
+    @staticmethod
+    def get_av1_speed_params() -> list[str]:
+        encoder = Config.cli_options["av1_encoder"]
+
+        if encoder == "svt-av1":
+            return ["-svtav1-params", f"preset={Config.cli_options['av1_preset']}"]
+
+        # libaom-av1
+        params = [
+            "-cpu-used", str(Config.cli_options["av1_cpu_used"]),
+            "-tile-columns", str(Config.cli_options["av1_tile_columns"]),
+            "-tile-rows", str(Config.cli_options["av1_tile_rows"]),
+            "-row-mt", str(Config.cli_options["av1_row_mt"]),
+        ]
+        return params

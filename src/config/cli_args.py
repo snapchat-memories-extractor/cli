@@ -125,6 +125,59 @@ def get_cli_args() -> argparse.Namespace:
             or libaom-av1 (slower, more tuning options). Short: -ae",
     )
     parser.add_argument(
+        "--av1-preset",
+        "-ap",
+        type=int,
+        choices=range(0, 14),
+        default=8,
+        metavar="0-13",
+        help="SVT-AV1 encoding speed preset (0=slowest/best, 13=fastest/worst, \
+            default: 8). Only applies when --av1-encoder=svt-av1. Short: -ap",
+    )
+    parser.add_argument(
+        "--av1-cpu-used",
+        "-acu",
+        type=int,
+        choices=range(0, 9),
+        default=4,
+        metavar="0-8",
+        help="libaom-av1 encoding speed (0=slowest/best, 8=fastest/worst, \
+            default: 4). Only applies when --av1-encoder=libaom-av1. Short: -acu",
+    )
+    parser.add_argument(
+        "--av1-tile-columns",
+        "-atc",
+        type=int,
+        choices=range(0, 7),
+        default=0,
+        metavar="0-6",
+        help="Number of tile columns as log2 value (0=1 tile, 1=2 tiles, \
+            2=4 tiles, etc). Improves encoding speed on multi-core CPUs \
+            (default: 0). Short: -atc",
+    )
+    parser.add_argument(
+        "--av1-tile-rows",
+        "-atr",
+        type=int,
+        choices=range(0, 7),
+        default=0,
+        metavar="0-6",
+        help="Number of tile rows as log2 value (0=1 tile, 1=2 tiles, \
+            2=4 tiles, etc). Improves encoding speed on multi-core CPUs \
+            (default: 0). Short: -atr",
+    )
+    parser.add_argument(
+        "--av1-row-mt",
+        "-arm",
+        type=int,
+        choices=[0, 1],
+        default=1,
+        metavar="0|1",
+        help="Enable row-based multi-threading for libaom-av1 (0=disabled, \
+            1=enabled, default: 1). Improves encoding speed on multi-core CPUs. \
+            Only applies when --av1-encoder=libaom-av1. Short: -arm",
+    )
+    parser.add_argument(
         "--constant-rate-factor",
         "--crf",
         type=crf_type,
