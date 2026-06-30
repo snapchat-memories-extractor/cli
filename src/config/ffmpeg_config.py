@@ -4,8 +4,8 @@ from src.config.main import Config
 class FFmpegConfig:
     @staticmethod
     def get_video_codec() -> str:
-        if Config.cli_options["video_codec"] == "h265":
-            return "libx265"
+        if Config.cli_options["video_codec"] == "av1":
+            return "libaom-av1"
         return "libx264"
 
     @staticmethod

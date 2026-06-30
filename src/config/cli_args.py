@@ -110,10 +110,10 @@ def get_cli_args() -> argparse.Namespace:
         "--video-codec",
         "-vc",
         type=str,
-        choices=["h264", "h265"],
+        choices=["h264", "av1"],
         default="h264",
-        help="Choose video codec: h264 (default, best compatibility) or h265 \
-            (smaller files, less compatible)",
+        help="Choose video codec: h264 (default, best compatibility) or av1 \
+            (best compression, royalty-free, slower to encode)",
     )
     parser.add_argument(
         "--constant-rate-factor",
