@@ -178,11 +178,55 @@ def get_cli_args() -> argparse.Namespace:
             Only applies when --av1-encoder=libaom-av1. Short: -arm",
     )
     parser.add_argument(
+        "--av1-aq-mode",
+        "-aam",
+        type=int,
+        choices=[0, 1, 2, 3],
+        default=0,
+        metavar="0-3",
+        help="Adaptive quantization mode for libaom-av1: 0=off, 1=variance, \
+            2=complexity, 3=cyclic refresh (default: 0). \
+            Only applies when --av1-encoder=libaom-av1. Short: -aam",
+    )
+    parser.add_argument(
+        "--av1-lag-in-frames",
+        "-alf",
+        type=int,
+        default=25,
+        metavar="N",
+        help="Number of frames to look ahead for libaom-av1 rate control \
+            (default: 25, max: 35). Higher values improve compression at the \
+            cost of memory and latency. \
+            Only applies when --av1-encoder=libaom-av1. Short: -alf",
+    )
+    parser.add_argument(
+        "--av1-tune",
+        "-at",
+        type=str,
+        choices=["psnr", "ssim", "vmaf_with_preprocessing", "vmaf_without_preprocessing",
+                 "vmaf_max_gain", "butteraugli"],
+        default=None,
+        metavar="METRIC",
+        help="Tune libaom-av1 encoding for a specific quality metric \
+            (default: none). Only applies when --av1-encoder=libaom-av1. Short: -at",
+    )
+    parser.add_argument(
+        "--av1-usage",
+        "-au",
+        type=str,
+        choices=["good", "realtime", "allintra"],
+        default="good",
+        help="libaom-av1 usage profile: good (default, best quality/speed tradeoff), \
+            realtime (low latency), allintra (still images / intra-only encoding). \
+            Only applies when --av1-encoder=libaom-av1. Short: -au",
+    )
+    parser.add_argument(
         "--constant-rate-factor",
         "--crf",
         type=crf_type,
         default=None,
         help="Constant Rate Factor for video quality \
+            (0-51, lower=better, 0=lossless, 18-28 is typical). \
             Defaults to 23 for h264, 36 for av1.",
     )
     parser.add_argument(

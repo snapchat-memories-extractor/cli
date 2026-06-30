@@ -40,3 +40,20 @@ class FFmpegConfig:
             "-row-mt", str(Config.cli_options["av1_row_mt"]),
         ]
         return params
+
+    @staticmethod
+    def get_av1_quality_params() -> list[str]:
+        # Quality tuning flags are libaom-av1 only
+        if Config.cli_options["av1_encoder"] != "libaom-av1":
+            return []
+
+        params = [
+            "-aq-mode", str(Config.cli_options["av1_aq_mode"]),
+            "-lag-in-frames", str(Config.cli_options["av1_lag_in_frames"]),
+            "-usage", Config.cli_options["av1_usage"],
+        ]
+
+        if Config.cli_options["av1_tune"] is not None:
+            params += ["-tune", Config.cli_options["av1_tune"]]
+
+        return params

@@ -28,6 +28,10 @@ def build_cli_options(args: argparse.Namespace) -> dict:
         "av1_tile_columns": args.av1_tile_columns,
         "av1_tile_rows": args.av1_tile_rows,
         "av1_row_mt": args.av1_row_mt,
+        "av1_aq_mode": args.av1_aq_mode,
+        "av1_lag_in_frames": args.av1_lag_in_frames,
+        "av1_tune": args.av1_tune,
+        "av1_usage": args.av1_usage,
         "crf": args.constant_rate_factor,
         "cjxl_timeout": args.cjxl_timeout,
     }
