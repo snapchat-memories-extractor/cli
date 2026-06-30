@@ -119,9 +119,9 @@ def get_cli_args() -> argparse.Namespace:
         "--constant-rate-factor",
         "--crf",
         type=crf_type,
-        default=23,
+        default=None,
         help="Constant Rate Factor for video quality \
-            (0-51, lower=better, 0=lossless, 18-28 is typical, default: 23)",
+            Defaults to 23 for h264, 36 for av1.",
     )
     parser.add_argument(
         "--cjxl-timeout",

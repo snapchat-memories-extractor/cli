@@ -22,5 +22,5 @@ class ProcessVideo:
             or Config.cli_options["ffmpeg_preset"] != "fast"
             or Config.cli_options["ffmpeg_pixel_format"] != "yuv420p"
             or not Config.cli_options["write_metadata"]
-            or Config.cli_options["crf"] != 23
+            or Config.cli_options["crf"] is not None
         )
