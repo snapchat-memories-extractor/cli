@@ -35,6 +35,7 @@ class VideoConverter:
         if is_av1:
             command += ["-b:v", "0"]
             command += FFmpegConfig.get_av1_speed_params()
+            command += FFmpegConfig.get_av1_quality_params()
         else:
             command += ["-preset", FFmpegConfig.get_ffmpeg_preset()]
 
