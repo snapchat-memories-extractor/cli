@@ -8,11 +8,11 @@ from src.metadata import VideoMetadataWriter
 
 class ProcessVideo:
     def run(self, memory: Memory, file_path: Path) -> Path:
-        if Config.cli_options["write_metadata"]:
-            return VideoMetadataWriter(memory, file_path).write_video_metadata()
-
         if self._should_process_video():
             file_path = VideoConverter(file_path).run()
+
+        if Config.cli_options["write_metadata"]:
+            file_path = VideoMetadataWriter(memory, file_path).write_video_metadata()
 
         return file_path
 
