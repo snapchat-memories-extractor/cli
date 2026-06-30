@@ -18,10 +18,6 @@ class FFmpegConfig:
         return str(user_crf)
 
     @staticmethod
-    def get_ffmpeg_preset() -> str:
-        return Config.cli_options["ffmpeg_preset"]
-
-    @staticmethod
     def get_video_pixel_format() -> str:
         return Config.cli_options["ffmpeg_pixel_format"]
 
@@ -69,7 +65,6 @@ class FFmpegConfig:
         grain_denoise = Config.cli_options["grain_denoise"]
 
         if encoder == "svt-av1":
-            # SVT-AV1 accepts film grain via -svtav1-params as a key=value string
             svt_params = f"film-grain={film_grain}:film-grain-denoise={grain_denoise}"
             return ["-svtav1-params", svt_params]
 

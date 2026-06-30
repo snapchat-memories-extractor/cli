@@ -3,9 +3,9 @@ import argparse
 
 # Validate CRF value there to escape long help messages
 def crf_type(value: str) -> int:
-    inavlid_crf_message = "CRF must be between 0 (lossless) and 51 (worst quality)"
+    inavlid_crf_message = "CRF must be between 0 (lossless) and 63 (worst quality)"
     ivalue = int(value)
-    if not (0 <= ivalue <= 51):
+    if not (0 <= ivalue <= 63):
         raise argparse.ArgumentTypeError(inavlid_crf_message)
     return ivalue
 
@@ -246,9 +246,9 @@ def get_cli_args() -> argparse.Namespace:
         "--crf",
         type=crf_type,
         default=None,
-        help="Constant Rate Factor for video quality \
-            (0-51, lower=better, 0=lossless, 18-28 is typical). \
-            Defaults to 23 for h264, 36 for av1.",
+        help="Constant Rate Factor for video quality (lower=better, 0=lossless). \
+            For h264: 0-51, typical range 18-28, default 23. \
+            For av1: 0-63, typical range 28-40, default 36.",
     )
     parser.add_argument(
         "--cjxl-timeout",
@@ -282,7 +282,8 @@ def get_cli_args() -> argparse.Namespace:
             "placebo",
         ],
         default="fast",
-        help=("FFmpeg preset for video encoding (default: fast). Short: -fp"),
+        help="FFmpeg preset for h264 encoding speed (default: fast). \
+            Only applies when --video-codec=h264. Short: -fp",
     )
     parser.add_argument(
         "--ffmpeg-pixel-format",
@@ -290,22 +291,16 @@ def get_cli_args() -> argparse.Namespace:
         type=str,
         choices=[
             "yuv420p",
-            "rgb24",
-            "rgba",
-            "nv12",
             "yuv422p",
             "yuv444p",
-            "bgr24",
-            "gray",
-            "yuyv422",
-            "p010le",
             "yuv420p10le",
-            "nv21",
-            "bgra",
-            "argb",
+            "yuv422p10le",
+            "yuv444p10le",
         ],
         default="yuv420p",
-        help="FFmpeg pixel format for video encoding (default: yuv420p). Short: -pf",
+        help="Pixel format for video encoding (default: yuv420p). \
+            10-bit formats (yuv*10le) require a compatible decoder. \
+            Compatible with both h264 and av1. Short: -pf",
     )
     parser.add_argument(
         "--log-level",

@@ -19,7 +19,6 @@ class ProcessVideo:
     def _should_process_video(self) -> bool:
         return bool(
             Config.cli_options["video_codec"] != "h264"
-            or Config.cli_options["ffmpeg_preset"] != "fast"
             or Config.cli_options["ffmpeg_pixel_format"] != "yuv420p"
             or not Config.cli_options["write_metadata"]
             or Config.cli_options["crf"] is not None
