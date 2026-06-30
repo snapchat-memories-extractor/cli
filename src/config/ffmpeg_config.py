@@ -57,3 +57,24 @@ class FFmpegConfig:
             params += ["-tune", Config.cli_options["av1_tune"]]
 
         return params
+
+    @staticmethod
+    def get_av1_film_grain_params() -> list[str]:
+        film_grain = Config.cli_options["film_grain"]
+
+        if not film_grain:
+            return []
+
+        encoder = Config.cli_options["av1_encoder"]
+        grain_denoise = Config.cli_options["grain_denoise"]
+
+        if encoder == "svt-av1":
+            # SVT-AV1 accepts film grain via -svtav1-params as a key=value string
+            svt_params = f"film-grain={film_grain}:film-grain-denoise={grain_denoise}"
+            return ["-svtav1-params", svt_params]
+
+        # libaom-av1
+        return [
+            "-film-grain-table", "",
+            "-denoise-noise-level", str(film_grain),
+        ]

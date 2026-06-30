@@ -32,6 +32,8 @@ def build_cli_options(args: argparse.Namespace) -> dict:
         "av1_lag_in_frames": args.av1_lag_in_frames,
         "av1_tune": args.av1_tune,
         "av1_usage": args.av1_usage,
+        "film_grain": args.film_grain,
+        "grain_denoise": args.grain_denoise,
         "crf": args.constant_rate_factor,
         "cjxl_timeout": args.cjxl_timeout,
     }

@@ -221,6 +221,27 @@ def get_cli_args() -> argparse.Namespace:
             Only applies when --av1-encoder=libaom-av1. Short: -au",
     )
     parser.add_argument(
+        "--film-grain",
+        "-fg",
+        type=int,
+        default=0,
+        metavar="0-50",
+        help="Film grain synthesis level for AV1 (0=disabled, 1-50=strength, \
+            default: 0). Encodes grain as metadata instead of pixels, \
+            improving compression on noisy sources. \
+            Only applies when --video-codec=av1. Short: -fg",
+    )
+    parser.add_argument(
+        "--grain-denoise",
+        "-gd",
+        type=int,
+        choices=[0, 1],
+        default=1,
+        metavar="0|1",
+        help="Denoise source before applying film grain synthesis (0=disabled, \
+            1=enabled, default: 1). Only applies when --film-grain > 0. Short: -gd",
+    )
+    parser.add_argument(
         "--constant-rate-factor",
         "--crf",
         type=crf_type,
