@@ -3,7 +3,7 @@ from pathlib import Path
 
 from imageio_ffmpeg import get_ffmpeg_exe
 
-from src.config import FFmpegConfig
+from src.config import FFmpegConfig, Config
 
 
 class VideoConverter:
@@ -16,7 +16,10 @@ class VideoConverter:
         return self.file_path
 
     def _build_ffmpeg_command(self) -> list[str]:
-        return [
+        codec = FFmpegConfig.get_video_codec()
+        is_av1 = Config.cli_options["video_codec"] == "av1"
+
+        command = [
             get_ffmpeg_exe(),
             "-y",
             "-i",
@@ -24,12 +27,20 @@ class VideoConverter:
             "-c:a",
             "copy",
             "-c:v",
-            FFmpegConfig.get_video_codec(),
+            codec,
             "-crf",
             FFmpegConfig.get_video_crf(),
-            "-preset",
-            FFmpegConfig.get_ffmpeg_preset(),
+        ]
+
+        if is_av1:
+            command += ["-b:v", "0"]
+        else:
+            command += ["-preset", FFmpegConfig.get_ffmpeg_preset()]
+
+        command += [
             "-pix_fmt",
             FFmpegConfig.get_video_pixel_format(),
             str(self.file_path),
         ]
+
+        return command

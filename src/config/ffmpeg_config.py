@@ -5,6 +5,8 @@ class FFmpegConfig:
     @staticmethod
     def get_video_codec() -> str:
         if Config.cli_options["video_codec"] == "av1":
+            if Config.cli_options["av1_encoder"] == "svt-av1":
+                return "libsvtav1"
             return "libaom-av1"
         return "libx264"
 

@@ -116,6 +116,15 @@ def get_cli_args() -> argparse.Namespace:
             (best compression, royalty-free, slower to encode)",
     )
     parser.add_argument(
+        "--av1-encoder",
+        "-ae",
+        type=str,
+        choices=["svt-av1", "libaom-av1"],
+        default="svt-av1",
+        help="AV1 encoder to use when --video-codec=av1: svt-av1 (default, faster) \
+            or libaom-av1 (slower, more tuning options). Short: -ae",
+    )
+    parser.add_argument(
         "--constant-rate-factor",
         "--crf",
         type=crf_type,
