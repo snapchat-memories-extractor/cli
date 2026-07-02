@@ -3,6 +3,7 @@
 # Warning
 
 The current version of the app does not work because Snapchat has changed the way it provides JSON data. The app is currently being reworked.
+
 ## Background
 
 Snapchat's data export gives you a JSON file with download links, dates, and GPS coordinates, but these are disconnected from the actual media. Downloaded files carry no metadata and open exactly as they were taken. Some download links even point to a ZIP archive containing the original file and its overlay (caption, stickers, drawings) as separate layers, rather than one merged file.
@@ -54,7 +55,7 @@ Once your Snapchat data export is ready and downloaded:
 
 1. Extract the ZIP file you received from Snapchat.
 2. Find the file named `memories_history.json` inside the extracted contents.
-3. You can either move this file into the `/data` folder (if you wish), or simply specify the absolute path to the JSON file using the `--memories-json` (or `-mj`) flag when running the extractor.
+3. You can either replace placeholder json file in the `/data` folder (if you wish), or simply specify the absolute path to the JSON file using the `--memories-json` (or `-mj`) flag when running the extractor.
 
 ### Step 4: Create a Virtual Environment
 
