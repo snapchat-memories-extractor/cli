@@ -8,19 +8,18 @@ from src.metadata import VideoMetadataWriter
 
 class ProcessVideo:
     def run(self, memory: Memory, file_path: Path) -> Path:
-        if Config.cli_options["write_metadata"]:
-            return VideoMetadataWriter(memory, file_path).write_video_metadata()
-
         if self._should_process_video():
             file_path = VideoConverter(file_path).run()
+
+        if Config.cli_options["write_metadata"]:
+            file_path = VideoMetadataWriter(memory, file_path).write_video_metadata()
 
         return file_path
 
     def _should_process_video(self) -> bool:
         return bool(
             Config.cli_options["video_codec"] != "h264"
-            or Config.cli_options["ffmpeg_preset"] != "fast"
             or Config.cli_options["ffmpeg_pixel_format"] != "yuv420p"
             or not Config.cli_options["write_metadata"]
-            or Config.cli_options["crf"] != 23
+            or Config.cli_options["crf"] is not None
         )

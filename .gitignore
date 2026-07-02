@@ -2,6 +2,6 @@
 logs/
 .venv/
 __pycache__/
-data/*.json
 .ruff_cache/
 .vscode/
+/data/

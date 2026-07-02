@@ -3,15 +3,39 @@ import argparse
 
 # Validate CRF value there to escape long help messages
 def crf_type(value: str) -> int:
-    inavlid_crf_message = "CRF must be between 0 (lossless) and 51 (worst quality)"
+    inavlid_crf_message = "CRF must be between 0 (lossless) and 63 (worst quality)"
     ivalue = int(value)
-    if not (0 <= ivalue <= 51):
+    if not (0 <= ivalue <= 63):
         raise argparse.ArgumentTypeError(inavlid_crf_message)
     return ivalue
 
 
 def get_cli_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Snapchat Memories Downloader")
+    parser.add_argument(
+        "--memories-json",
+        "-mj",
+        type=str,
+        default=None,
+        metavar="PATH",
+        help="Path to the memories JSON file (default: /data/memories_history.json). Short: -mj",
+    )
+    parser.add_argument(
+        "--output",
+        "-o",
+        type=str,
+        default=None,
+        metavar="PATH",
+        help="Custom output directory for downloaded files (default: ./downloads). Short: -o",
+    )
+    parser.add_argument(
+        "--logs-path",
+        "-lp",
+        type=str,
+        default=None,
+        metavar="PATH",
+        help="Custom directory for log files (default: ./logs). Short: -lp",
+    )
     parser.add_argument(
         "--ffmpeg-timeout",
         "-f",
@@ -32,9 +56,9 @@ def get_cli_args() -> argparse.Namespace:
         "--concurrent",
         "-c",
         type=int,
-        default=5,
+        default=10,
         metavar="N",
-        help="Concurrent downloads (default: 5). Short: -c",
+        help="Concurrent downloads (default: 10). Short: -c",
     )
     parser.add_argument(
         "--no-overlay",
@@ -75,29 +99,156 @@ def get_cli_args() -> argparse.Namespace:
         help="JPEG quality 1-100 (default: 95). Short: -q",
     )
     parser.add_argument(
-        "--no-jxl",
+        "--jxl",
         "-J",
         default=False,
         action="store_true",
-        help="Skip JPGXL conversion and keep original JPEG \
-            (default: convert to lossless JPGXL). Short: -J",
+        help="Convert JPEG to lossless JPGXL \
+            (default: keep original JPEG). Short: -J",
     )
     parser.add_argument(
         "--video-codec",
         "-vc",
         type=str,
-        choices=["h264", "h265"],
+        choices=["h264", "av1"],
         default="h264",
-        help="Choose video codec: h264 (default, best compatibility) or h265 \
-            (smaller files, less compatible)",
+        help="Choose video codec: h264 (default, best compatibility) or av1 \
+            (best compression, royalty-free, slower to encode)",
+    )
+    parser.add_argument(
+        "--av1-encoder",
+        "-ae",
+        type=str,
+        choices=["svt-av1", "libaom-av1"],
+        default="svt-av1",
+        help="AV1 encoder to use when --video-codec=av1: svt-av1 (default, faster) \
+            or libaom-av1 (slower, more tuning options). Short: -ae",
+    )
+    parser.add_argument(
+        "--av1-preset",
+        "-ap",
+        type=int,
+        choices=range(0, 14),
+        default=8,
+        metavar="0-13",
+        help="SVT-AV1 encoding speed preset (0=slowest/best, 13=fastest/worst, \
+            default: 8). Only applies when --av1-encoder=svt-av1. Short: -ap",
+    )
+    parser.add_argument(
+        "--av1-cpu-used",
+        "-acu",
+        type=int,
+        choices=range(0, 9),
+        default=4,
+        metavar="0-8",
+        help="libaom-av1 encoding speed (0=slowest/best, 8=fastest/worst, \
+            default: 4). Only applies when --av1-encoder=libaom-av1. Short: -acu",
+    )
+    parser.add_argument(
+        "--av1-tile-columns",
+        "-atc",
+        type=int,
+        choices=range(0, 7),
+        default=0,
+        metavar="0-6",
+        help="Number of tile columns as log2 value (0=1 tile, 1=2 tiles, \
+            2=4 tiles, etc). Improves encoding speed on multi-core CPUs \
+            (default: 0). Short: -atc",
+    )
+    parser.add_argument(
+        "--av1-tile-rows",
+        "-atr",
+        type=int,
+        choices=range(0, 7),
+        default=0,
+        metavar="0-6",
+        help="Number of tile rows as log2 value (0=1 tile, 1=2 tiles, \
+            2=4 tiles, etc). Improves encoding speed on multi-core CPUs \
+            (default: 0). Short: -atr",
+    )
+    parser.add_argument(
+        "--av1-row-mt",
+        "-arm",
+        type=int,
+        choices=[0, 1],
+        default=1,
+        metavar="0|1",
+        help="Enable row-based multi-threading for libaom-av1 (0=disabled, \
+            1=enabled, default: 1). Improves encoding speed on multi-core CPUs. \
+            Only applies when --av1-encoder=libaom-av1. Short: -arm",
+    )
+    parser.add_argument(
+        "--av1-aq-mode",
+        "-aam",
+        type=int,
+        choices=[0, 1, 2, 3],
+        default=0,
+        metavar="0-3",
+        help="Adaptive quantization mode for libaom-av1: 0=off, 1=variance, \
+            2=complexity, 3=cyclic refresh (default: 0). \
+            Only applies when --av1-encoder=libaom-av1. Short: -aam",
+    )
+    parser.add_argument(
+        "--av1-lag-in-frames",
+        "-alf",
+        type=int,
+        default=25,
+        metavar="N",
+        help="Number of frames to look ahead for libaom-av1 rate control \
+            (default: 25, max: 35). Higher values improve compression at the \
+            cost of memory and latency. \
+            Only applies when --av1-encoder=libaom-av1. Short: -alf",
+    )
+    parser.add_argument(
+        "--av1-tune",
+        "-at",
+        type=str,
+        choices=["psnr", "ssim", "vmaf_with_preprocessing", "vmaf_without_preprocessing",
+                 "vmaf_max_gain", "butteraugli"],
+        default=None,
+        metavar="METRIC",
+        help="Tune libaom-av1 encoding for a specific quality metric \
+            (default: none). Only applies when --av1-encoder=libaom-av1. Short: -at",
+    )
+    parser.add_argument(
+        "--av1-usage",
+        "-au",
+        type=str,
+        choices=["good", "realtime", "allintra"],
+        default="good",
+        help="libaom-av1 usage profile: good (default, best quality/speed tradeoff), \
+            realtime (low latency), allintra (still images / intra-only encoding). \
+            Only applies when --av1-encoder=libaom-av1. Short: -au",
+    )
+    parser.add_argument(
+        "--film-grain",
+        "-fg",
+        type=int,
+        default=0,
+        metavar="0-50",
+        help="Film grain synthesis level for AV1 (0=disabled, 1-50=strength, \
+            default: 0). Encodes grain as metadata instead of pixels, \
+            improving compression on noisy sources. \
+            Only applies when --video-codec=av1. Short: -fg",
+    )
+    parser.add_argument(
+        "--grain-denoise",
+        "-gd",
+        type=int,
+        choices=[0, 1],
+        default=1,
+        metavar="0|1",
+        help="Denoise source before applying film grain synthesis (0=disabled, \
+            1=enabled, default: 1). Only applies when --film-grain > 0. Short: -gd",
     )
     parser.add_argument(
         "--constant-rate-factor",
         "--crf",
         type=crf_type,
-        default=23,
-        help="Constant Rate Factor for video quality \
-            (0-51, lower=better, 0=lossless, 18-28 is typical, default: 23)",
+        default=None,
+        help="Constant Rate Factor for video quality (lower=better, 0=lossless). \
+            For h264: 0-51, typical range 18-28, default 23. \
+            For av1: 0-63, typical range 28-40, default 36.",
     )
     parser.add_argument(
         "--cjxl-timeout",
@@ -131,7 +282,8 @@ def get_cli_args() -> argparse.Namespace:
             "placebo",
         ],
         default="fast",
-        help=("FFmpeg preset for video encoding (default: fast). Short: -fp"),
+        help="FFmpeg preset for h264 encoding speed (default: fast). \
+            Only applies when --video-codec=h264. Short: -fp",
     )
     parser.add_argument(
         "--ffmpeg-pixel-format",
@@ -139,22 +291,16 @@ def get_cli_args() -> argparse.Namespace:
         type=str,
         choices=[
             "yuv420p",
-            "rgb24",
-            "rgba",
-            "nv12",
             "yuv422p",
             "yuv444p",
-            "bgr24",
-            "gray",
-            "yuyv422",
-            "p010le",
             "yuv420p10le",
-            "nv21",
-            "bgra",
-            "argb",
+            "yuv422p10le",
+            "yuv444p10le",
         ],
         default="yuv420p",
-        help="FFmpeg pixel format for video encoding (default: yuv420p). Short: -pf",
+        help="Pixel format for video encoding (default: yuv420p). \
+            10-bit formats (yuv*10le) require a compatible decoder. \
+            Compatible with both h264 and av1. Short: -pf",
     )
     parser.add_argument(
         "--log-level",

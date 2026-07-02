@@ -28,7 +28,7 @@ def temp_config():
         yield Config(
             cli_options=cli_options,
             json_path=Path(tmpdir) / "memories_history.json",
-            downloads_folder=Path(tmpdir) / "downloads",
+            output_folder=Path(tmpdir) / "downloads",
             logs_folder=Path(tmpdir) / "logs",
         )
 

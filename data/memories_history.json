@@ -1,0 +1,32 @@
+{
+	"Saved Media": [
+		{
+			"Date": "2026-01-18 11:14:44 UTC",
+			"Media Type": "Video",
+			"Location": "Latitude, Longitude: 0.0, 0.0",
+			"Download Link": "https://app.snapchat.com/dmd/memories?uid=3a9172c8-4e21-4b07-f983-8cd4751a2e95&sid=A1B2C3D4-22F6-4E8A-C94D-7G891H23I4J5&mid=A1B2C3D4-22F6-4E8A-C94D-7G891H23I4J5&ts=1784523917342&proxy=true&sig=ab3c12984ef6a1b2c3d4e5f6789012345678abcdef1234567890abcdef123456",
+			"Media Download Url": "https://us-east1-aws.api.snapchat.com/dmd/mm?uid=2c8374f1-5a29-4e61-b832-7df9046c3a17&sid=4B3A1C2D-EF56-47G8-H901-IJ23KL45MN67&mid=4B3A1C2D-EF56-47G8-H901-IJ23KL45MN67&ts=1758392847561&sig=a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+		},
+		{
+			"Date": "2026-01-18 11:14:28 UTC",
+			"Media Type": "Video",
+			"Location": "Latitude, Longitude: 0.0, 0.0",
+			"Download Link": "https://app.snapchat.com/dmd/memories?uid=b2e394d1-9f47-4d18-c721-5fa3867b4c02&sid=F7E6D5C4-89B3-4F2E-A17C-3K456L78M9N0&mid=F7E6D5C4-89B3-4F2E-A17C-3K456L78M9N0&ts=1758931046527&proxy=true&sig=cd4e56712fg8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3",
+			"Media Download Url": "https://us-east1-aws.api.snapchat.com/dmd/mm?uid=9e1526d3-3b74-4f82-c947-1ag8135d2b48&sid=7E6F8D9C-BA12-43H4-I567-JK89LM01NO23&mid=7E6F8D9C-BA12-43H4-I567-JK89LM01NO23&ts=1784719302847&sig=b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2g3"
+		},
+		{
+			"Date": "2026-01-18 11:14:20 UTC",
+			"Media Type": "Image",
+			"Location": "Latitude, Longitude: 0.0, 0.0",
+			"Download Link": "hhttps://app.snapchat.com/dmd/memories?uid=c7f218a5-2b63-4891-d045-6eb5924c7d13&sid=9D8C7B6A-34H1-4G7F-B28E-5P234Q56R7S8&mid=9D8C7B6A-34H1-4G7F-B28E-5P234Q56R7S8&ts=1799147382961&proxy=true&sig=ef5f67823gh9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4",
+			"Media Download Url": "https://us-east1-aws.api.snapchat.com/dmd/mm?uid=5f4813c6-7d91-4a53-e260-4bh9247f5c39&sid=1C0D2B3A-DC34-45I6-J789-KL01MN23PQ45&mid=1C0D2B3A-DC34-45I6-J789-KL01MN23PQ45&ts=1799284651039&sig=c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2g3h4"
+		},
+		{
+			"Date": "2026-01-18 11:14:12 UTC",
+			"Media Type": "Image",
+			"Location": "Latitude, Longitude: 0.0, 0.0",
+			"Download Link": "https://app.snapchat.com/dmd/memories?uid=d4a837b2-6c52-4f26-e376-9dc7013e8f24&sid=B3A2F1E0-56J4-4H6G-D39F-1T890U12V3W4&mid=B3A2F1E0-56J4-4H6G-D39F-1T890U12V3W4&ts=1742685749183&proxy=true&sig=fg6g78934hi0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5",
+			"Media Download Url": "https://us-east1-aws.api.snapchat.com/dmd/mm?uid=8b7294e5-1c48-4d37-f593-6ci0358g6d20&sid=5A4B6C7D-FE78-41J2-K345-LM67NO89QR01&mid=5A4B6C7D-FE78-41J2-K345-LM67NO89QR01&ts=1742936184726&sig=d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2g3h4i5"
+		}
+	]
+}

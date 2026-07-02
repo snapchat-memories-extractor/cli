@@ -2,11 +2,11 @@ import subprocess
 import tempfile
 from io import BytesIO
 from pathlib import Path
-
 from imageio_ffmpeg import get_ffmpeg_exe
 from PIL import Image
 
 from src.config import Config
+from src.config.ffmpeg_config import FFmpegConfig
 
 
 class VideoComposer:
@@ -85,7 +85,10 @@ class VideoComposer:
     def _build_ffmpeg_overlay_command(
         self, video_path: str, overlay_path: str
     ) -> list[str]:
-        return [
+        codec = FFmpegConfig.get_video_codec()
+        is_av1 = Config.cli_options["video_codec"] == "av1"
+
+        command = [
             get_ffmpeg_exe(),
             "-i",
             video_path,
@@ -93,10 +96,29 @@ class VideoComposer:
             overlay_path,
             "-filter_complex",
             "overlay=0:0",
-            "-c",
+            "-c:v",
+            codec,
+            "-crf",
+            FFmpegConfig.get_video_crf(),
+        ]
+
+        if is_av1:
+            command += ["-b:v", "0"]
+            command += FFmpegConfig.get_av1_speed_params()
+            command += FFmpegConfig.get_av1_quality_params()
+            command += FFmpegConfig.get_av1_film_grain_params()
+        else:
+            command += ["-preset", FFmpegConfig.get_ffmpeg_preset()]
+
+        command += [
+            "-pix_fmt",
+            FFmpegConfig.get_video_pixel_format(),
+            "-c:a",
             "copy",
             str(self.output_path),
         ]
+
+        return command
 
     def _run_ffmpeg_command(
         self, command: list, timeout: int
