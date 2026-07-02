@@ -2,7 +2,7 @@
 requests>=2.33.1
 pydantic>=2.13.3
 piexif>=1.1.3
-Pillow>=10.0.0
+Pillow>=12.2.0
 imageio-ffmpeg>=0.5.1
 
 # Development dependencies (optional, for local development)
