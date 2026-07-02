@@ -1,5 +1,8 @@
 # Snapchat Memories Extractor
 
+# Warning
+
+The current version of the app does not work because Snapchat has changed the way it provides JSON data. The app is currently being reworked.
 ## Background
 
 Snapchat's data export gives you a JSON file with download links, dates, and GPS coordinates, but these are disconnected from the actual media. Downloaded files carry no metadata and open exactly as they were taken. Some download links even point to a ZIP archive containing the original file and its overlay (caption, stickers, drawings) as separate layers, rather than one merged file.
