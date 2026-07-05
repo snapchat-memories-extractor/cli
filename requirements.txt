@@ -6,7 +6,7 @@ imageio-ffmpeg>=0.6.0
 Pillow>=12.2.0
 
 # Development dependencies (optional, for local development)
-pytest>=9.0.3
+pytest>=9.1.1
 pytest-cov>=7.1.0
 pytest-mock>=3.15.1
 black>=23.12.1
