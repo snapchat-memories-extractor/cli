@@ -15,4 +15,6 @@ ERROR_DESCRIPTIONS = {
     "INT": "Interrupted by user",
     "MISS": "Missing 'memories_history.json' file. Check file path",
     "ERR": "Unexpected error",
+    "PAIR": "Pairing error - overlay file has no matching main file",
+    "MATCH": "Matching error - ambiguous or missing datetime match to json entry",
 }
