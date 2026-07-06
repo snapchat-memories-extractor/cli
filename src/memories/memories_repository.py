@@ -11,7 +11,8 @@ class MemoriesRepository:
         if not data:
             return []
 
-        return data.get("Saved Media", [])
+        raw_items = data.get("Saved Media", [])
+        return [item for item in raw_items if self._has_usable_location(item)]
 
     @staticmethod
     def _load() -> dict:
@@ -22,21 +23,16 @@ class MemoriesRepository:
         with Path.open(Config.json_path, encoding="utf-8") as file:
             return json.load(file)
 
-    def prune_by_media_download_url(self, media_download_url: str) -> None:
-        data = self._load()
-        saved_media = data.get("Saved Media", [])
-        for index, item in enumerate(saved_media):
-            if item.get("Media Download Url") != media_download_url:
-                continue
-            del saved_media[index]
-            self._save(data)
-            return
-        log(
-            f"Media Download Url {media_download_url} not found for pruning.",
-            "warning",
-        )
-
     @staticmethod
-    def _save(data: dict) -> None:
-        text = json.dumps(data, ensure_ascii=False, indent=4)
-        Config.json_path.write_text(text, encoding="utf-8")
+    def _has_usable_location(item: dict) -> bool:
+        location = item.get("Location")
+        if not location:
+            return False
+
+        coords_part = location.replace("Latitude, Longitude: ", "")
+        try:
+            latitude, longitude = map(float, coords_part.split(", "))
+        except (ValueError, AttributeError):
+            return False
+
+        return not (latitude == 0.0 and longitude == 0.0)
