@@ -1,33 +1,33 @@
-from io import BytesIO
 from pathlib import Path
-
 from PIL import Image
-
 from src.config import Config
 
 
 class ImageComposer:
-    def __init__(
-        self, image_bytes: bytes, overlay_bytes: bytes, output_path: Path
-    ) -> None:
-        self.image_bytes = image_bytes
-        self.overlay_bytes = overlay_bytes
+    def __init__(self, main_path: Path, overlay_path: Path, output_path: Path) -> None:
+        self.main_path = main_path
+        self.overlay_path = overlay_path
         self.output_path = output_path
 
-    def apply_overlay(self) -> bytes:
-        base_image = Image.open(BytesIO(self.image_bytes))
-        overlay_image = Image.open(BytesIO(self.overlay_bytes))
-        base_image = self._ensure_rgba(base_image)
-        overlay_image = self._ensure_rgba(overlay_image)
+    def apply_overlay(self) -> None:
+        with Image.open(self.main_path) as base_image:
+            exif_bytes = base_image.info.get("exif")
+            base_image = self._ensure_rgba(base_image)
 
-        # In some cases the overlay image is mismatched by 1 pixel
-        overlay_image = self._resize_to_match(overlay_image, base_image.size)
+            with Image.open(self.overlay_path) as overlay_image:
+                overlay_image = self._ensure_rgba(overlay_image)
+                # In some cases the overlay image is mismatched by 1 pixel
+                overlay_image = self._resize_to_match(overlay_image, base_image.size)
+                combined_image = Image.alpha_composite(base_image, overlay_image)
 
-        combined_image = Image.alpha_composite(base_image, overlay_image)
         combined_rgb_image = combined_image.convert("RGB")
 
         quality = Config.cli_options["jpeg_quality"]
-        combined_rgb_image.save(str(self.output_path), format="JPEG", quality=quality)
+        save_kwargs = {"format": "JPEG", "quality": quality}
+        if exif_bytes:
+            save_kwargs["exif"] = exif_bytes
+
+        combined_rgb_image.save(str(self.output_path), **save_kwargs)
 
     @staticmethod
     def _ensure_rgba(image: Image.Image) -> Image.Image:
