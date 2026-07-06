@@ -61,11 +61,17 @@ def get_cli_args() -> argparse.Namespace:
         help="Concurrent downloads (default: 10). Short: -c",
     )
     parser.add_argument(
-        "--no-overlay",
-        "-O",
-        default=False,
-        action="store_true",
-        help="Skip applying PNG overlay (default: overlay applied). Short: -O",
+        "--overlay-mode",
+        "-om",
+        type=str,
+        choices=["on", "off", "both"],
+        default="on",
+        help="Overlay handling: 'on' composites the overlay into the main \
+            file and deletes both sources (default, matches old behavior). \
+            'off' deletes overlay files without compositing them. 'both' \
+            composites into a new <id>-overlaid file while keeping the \
+            original <id>-main file, and only deletes the overlay source. \
+            Short: -om",
     )
     parser.add_argument(
         "--no-metadata",

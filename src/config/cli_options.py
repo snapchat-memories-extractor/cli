@@ -9,7 +9,7 @@ def build_cli_options(args: argparse.Namespace) -> dict:
         "output": args.output,
         "logs_path": args.logs_path,
         "max_concurrent_downloads": args.concurrent,
-        "apply_overlay": not args.no_overlay,
+        "overlay_mode": args.overlay_mode,
         "write_metadata": not args.no_metadata,
         "max_attempts": args.attempts,
         "strict_location": args.strict_location,
