@@ -22,6 +22,10 @@ class FFmpegConfig:
         return Config.cli_options["ffmpeg_pixel_format"]
 
     @staticmethod
+    def get_ffmpeg_preset() -> str:
+        return Config.cli_options["ffmpeg_preset"]
+
+    @staticmethod
     def get_av1_speed_params() -> list[str]:
         encoder = Config.cli_options["av1_encoder"]
 

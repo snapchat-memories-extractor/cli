@@ -34,4 +34,5 @@ def build_cli_options(args: argparse.Namespace) -> dict:
         "grain_denoise": args.grain_denoise,
         "crf": args.constant_rate_factor,
         "cjxl_timeout": args.cjxl_timeout,
+        "ffmpeg_preset": args.ffmpeg_preset,
     }
