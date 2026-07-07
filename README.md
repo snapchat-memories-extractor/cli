@@ -975,76 +975,56 @@ python main.py --video-codec av1 --film-grain 8 --grain-denoise 0
 
 ```mermaid
 flowchart TD
-    Init[Load config and CLI optionsstart JSON logger] --> Scan
-    Scan[Recursively scan memories folderpair id-main / id-overlay files] --> LoadJson[Load memories_history.jsonfilter entries with no usable GPS]
-    LoadJson --> Pool[Submit pairs to thread poolN concurrent workers]
+    Init[Load config and CLI options]
 
-    Pool --> HasMain
-
-    subgraph PerPair ["Per pair - runs concurrently"]
-        direction TB
-        HasMain{main file exists?}
-        HasMain -->|no| FailPair[[log PAIR, count as failed]]
-        HasMain -->|yes| Mode{overlay-mode?}
+    subgraph Overlay[Overlay handling]
+        OverMode{--overlay-mode?}
+        OverMode -->|off| RemoveOF[Remove -overlay files]
+        OverMode -->|on| AppendOF[Append id-overlay onto id-main]
+        OverMode -->|both| CopyAppendOF[Preserve id-main and append overlay to copy]
     end
 
-    subgraph OverlayStage ["Overlay stage - runs before matching"]
-        direction TB
-        Mode -->|off| Off[Delete overlay fileif present]
-        Mode -->|on| On[Composite overlay into mainPillow / ffmpeg overlay filterdelete both sources]
-        Mode -->|both| Both[Composite into id-overlaid filekeep main, delete overlay source]
+    subgraph Metadata[Metadata handling]
+        MetaCheck{Write metadata?}
+        MetaCheck -->|no --no-metadata| SkipMeta[Skip metadata step]
+        MetaCheck -->|yes| ScanMeta[Scan files and match JSON entries]
+
+        ScanMeta --> JsonMatch{Matching JSON entry?}
+        JsonMatch -->|yes| WriteGPS[Write GPS metadata]
+        JsonMatch -->|no| StrictCheck{--strict?}
+
+        StrictCheck -->|yes| DeleteUnmatched[Delete unmatched file]
+        StrictCheck -->|no| KeepUnmatched[Leave file unchanged]
     end
 
-    Off --> ReadDT
-    On --> ReadDT
-    Both --> ReadDT
+    subgraph Conversion[Conversion handling]
+        ConvCheck{Any conversion enabled?}
+        ConvCheck -->|no| SkipConv[Skip conversion step]
+        ConvCheck -->|yes| ScanConv[Scan eligible files]
 
-    ReadDT[Read embedded capture datetimeEXIF DateTimeOriginal or ffprobe creation_time]
-    ReadDT --> Match{matches exactly onejson entry?}
-
-    Match -->|no / ambiguous| StrictQ{strict on?}
-    StrictQ -->|yes| DeleteUnmatched[[delete file, count as unmatched]]
-    StrictQ -->|no| KeepUnmatched[[leave file untouched, count as unmatched]]
-
-    Match -->|yes, unique| MediaType{file extension?}
-
-    MediaType -->|.jpg / .jpeg| MetaI
-    MediaType -->|other| ConvQ
-
-    subgraph Img ["Image pipeline"]
-        direction TB
-        MetaI{write-metadata on?}
-        MetaI -->|yes| Exif[Write EXIF datetime and GPS]
-        MetaI -->|no| ResaveI[Re-save at JPEG quality]
-        Exif --> JxlQ{convert-to-jxl on?}
-        ResaveI --> JxlQ
-        JxlQ -->|yes| Jxl[cjxl lossless encode<br/>.jpg to .jxl]
-        JxlQ -->|no| ImgOut[.jpg ready]
-        Jxl --> ImgOut2[.jxl ready]
+        ScanConv --> FileType{Eligible file type?}
+        FileType -->|jpg + --jxl| ConvertJXL[Convert to JXL]
+        FileType -->|mp4 + --av1| ConvertAV1[Convert to AV1]
+        FileType -->|other| SkipFile[Skip file]
     end
 
-    subgraph Vid ["Video pipeline"]
-        direction TB
-        ConvQ{non-default codec, pixel-fmt,<br/>crf, or metadata off?}
-        ConvQ -->|yes| Ffmpeg[ffmpeg re-encode<br/>h264 or AV1]
-        ConvQ -->|no| SkipConv[keep original encode]
-        Ffmpeg --> MetaV{write-metadata on?}
-        SkipConv --> MetaV
-        MetaV -->|yes| Tags[ffmpeg stream-copy plus<br/>creation_time / GPS tags]
-        MetaV -->|no| VidOut[ready]
-        Tags --> VidOut2[ready]
-    end
+    Finish[Job finished]
 
-    ImgOut --> Finalize
-    ImgOut2 --> Finalize
-    VidOut --> Finalize
-    VidOut2 --> Finalize
-    DeleteUnmatched --> Finalize
-    KeepUnmatched --> Finalize
-    FailPair --> Finalize
+    Init --> OverMode
 
-    Finalize[Update stats, redraw progress UI]
-    Finalize --> Done([All pairs finished:print final summary and exit])
+    RemoveOF --> MetaCheck
+    AppendOF --> MetaCheck
+    CopyAppendOF --> MetaCheck
+
+    SkipMeta --> ConvCheck
+    WriteGPS --> ConvCheck
+    DeleteUnmatched --> ConvCheck
+    KeepUnmatched --> ConvCheck
+
+    SkipConv --> Finish
+    ConvertJXL --> Finish
+    ConvertAV1 --> Finish
+    SkipFile --> Finish
 ```
 
 </details>
