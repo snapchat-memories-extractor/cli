@@ -10,6 +10,13 @@ def crf_type(value: str) -> int:
     return ivalue
 
 
+def positive_int(value: str) -> int:
+    ivalue = int(value)
+    if ivalue < 1:
+        raise argparse.ArgumentTypeError("Value must be at least 1")
+    return ivalue
+
+
 def get_cli_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Snapchat Memories Downloader")
     parser.add_argument(
@@ -75,6 +82,42 @@ def get_cli_args() -> argparse.Namespace:
             composites into a new <id>-overlaid file while keeping the \
             original <id>-main file, and only deletes the overlay source. \
             Short: -om",
+    )
+    parser.add_argument(
+        "--overlay-applier-concurrency",
+        "-oac",
+        type=positive_int,
+        default=10,
+        metavar="N",
+        help="Number of overlay compositing operations to run in parallel \
+            (default: 10). Short: -oac",
+    )
+    parser.add_argument(
+        "--gps-writer-concurrency",
+        "-gwc",
+        type=positive_int,
+        default=10,
+        metavar="N",
+        help="Number of GPS metadata write operations to run in parallel \
+            (default: 10). Short: -gwc",
+    )
+    parser.add_argument(
+        "--jxl-converter-concurrency",
+        "-jcc",
+        type=positive_int,
+        default=10,
+        metavar="N",
+        help="Number of JXL conversion operations to run in parallel \
+            (default: 10). Ignored unless --jxl is enabled. Short: -jcc",
+    )
+    parser.add_argument(
+        "--av1-converter-concurrency",
+        "-acc",
+        type=positive_int,
+        default=10,
+        metavar="N",
+        help="Number of AV1 conversion operations to run in parallel \
+            (default: 10). Ignored unless --video-codec=av1. Short: -acc",
     )
     parser.add_argument(
         "--no-metadata",
