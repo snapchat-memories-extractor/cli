@@ -466,6 +466,8 @@ python main.py --video-codec av1
 
 ### Advanced Options
 
+> **Note:** With the default `--video-codec h264`, videos are encoded once using fixed, sane defaults (preset, `crf 23`, `yuv420p`) and are otherwise left alone — re-encoding is only triggered when `--video-codec av1` is set. Likewise, JPEGs default to quality 95 and are left byte-identical unless `--jxl` is set. All of the advanced tuning flags below (`--crf`, `--ffmpeg-pixel-format`, every `--av1-*` flag, `--film-grain`, `--grain-denoise`) only take effect during an actual AV1 or JXL conversion — set them freely, they're simply ignored otherwise.
+
 <details>
 <summary><b>FFmpeg Timeout: -f / --ffmpeg-timeout SECONDS</b></summary>
 
