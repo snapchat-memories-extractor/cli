@@ -61,7 +61,12 @@ class MemoriesPipeline:
 
         futures = {}
         for pair in pairs:
-            future = executor.submit(self._process_pair, pair, matcher)
+            future = executor.submit(
+                self._process_pair,
+                pair,
+                matcher,
+                stage_concurrency,
+            )
             futures[future] = pair
 
         return futures
@@ -89,7 +94,12 @@ class MemoriesPipeline:
         self._collect_results(unfinished)
         log("All in-flight pairs finished. Exiting.", "info")
 
-    def _process_pair(self, pair: MediaPair, matcher: LocationMatcher) -> PairResult:
+    def _process_pair(
+        self,
+        pair: MediaPair,
+        matcher: LocationMatcher,
+        stage_concurrency: StageConcurrency,
+    ) -> PairResult:
         result = PairResult(media_id=pair.media_id)
 
         if pair.main_path is None or not pair.main_path.exists():
@@ -97,7 +107,7 @@ class MemoriesPipeline:
             result.failed = True
             return result
 
-        file_path = self._run_overlay_stage(pair, result)
+        file_path = self._run_overlay_stage(pair, result, stage_concurrency)
         if file_path is None:
             return result
 
@@ -118,9 +128,18 @@ class MemoriesPipeline:
         return result
 
     @staticmethod
-    def _run_overlay_stage(pair: MediaPair, result: PairResult) -> Path | None:
+    def _run_overlay_stage(
+        pair: MediaPair,
+        result: PairResult,
+        stage_concurrency: StageConcurrency,
+    ) -> Path | None:
         try:
-            file_path = OverlayStage(pair).run()
+            overlay_stage = OverlayStage(pair)
+            if pair.overlay_path and Config.cli_options["overlay_mode"] != "off":
+                with stage_concurrency.overlay_applier_slot():
+                    file_path = overlay_stage.run()
+            else:
+                file_path = overlay_stage.run()
         except Exception as error:
             log(f"Overlay stage failed for '{pair.media_id}': {error}", "error", "OVR")
             result.failed = True
