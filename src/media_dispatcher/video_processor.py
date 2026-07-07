@@ -18,7 +18,7 @@ class ProcessVideo:
         stage_concurrency: "StageConcurrency | None" = None,
     ) -> Path:
         if self._should_process_video():
-            file_path = VideoConverter(file_path).run()
+            file_path = self._convert_to_av1(file_path, stage_concurrency)
 
         if Config.cli_options["write_metadata"] and memory is not None:
             file_path = self._write_video_metadata(
@@ -31,6 +31,17 @@ class ProcessVideo:
 
     def _should_process_video(self) -> bool:
         return Config.cli_options["video_codec"] == "av1"
+
+    def _convert_to_av1(
+        self,
+        file_path: Path,
+        stage_concurrency: "StageConcurrency | None",
+    ) -> Path:
+        if stage_concurrency is None:
+            return VideoConverter(file_path).run()
+
+        with stage_concurrency.av1_converter_slot():
+            return VideoConverter(file_path).run()
 
     def _write_video_metadata(
         self,
