@@ -14,6 +14,20 @@ class OverlayStage:
     def __init__(self, pair: MediaPair) -> None:
         self.pair = pair
 
+    @staticmethod
+    def purge_overlays() -> None:
+        deleted = 0
+        for overlay_path in Config.memories_folder.rglob("*-overlay.*"):
+            overlay_path.unlink()
+            deleted += 1
+
+        if deleted:
+            log(
+                f"--overlay-mode=off: deleted {deleted} overlay file(s) "
+                "immediately, before processing started.",
+                "info",
+            )
+
     def run(self) -> Path | None:
         mode = Config.cli_options["overlay_mode"]
 

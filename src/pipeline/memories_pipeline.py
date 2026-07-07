@@ -24,6 +24,9 @@ class PairResult:
 
 class MemoriesPipeline:
     def run(self) -> None:
+        if Config.cli_options["overlay_mode"] == "off":
+            OverlayStage.purge_overlays()
+
         pairs = FolderScanner(Config.memories_folder).run()
 
         if not pairs:
