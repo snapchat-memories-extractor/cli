@@ -51,7 +51,7 @@ class MemoriesPipeline:
     def _submit_pairs(
         self, pairs: list[MediaPair], matcher: LocationMatcher
     ) -> dict[Future, MediaPair]:
-        max_workers = Config.cli_options["concurrent_pairs"]
+        max_workers = Config.cli_options["max_concurrent_pairs"]
         executor = ThreadPoolExecutor(max_workers=max_workers)
 
         futures = {}
@@ -100,7 +100,7 @@ class MemoriesPipeline:
         memory = matcher.match_one(pair.media_id, captured_at)
         result.matched = memory is not None
 
-        if memory is None and Config.cli_options["strict_matching"]:
+        if memory is None and Config.cli_options["strict_location"]:
             file_path.unlink(missing_ok=True)
             result.deleted_unmatched = True
             log(f"Deleted unmatched file for '{pair.media_id}' (--strict)", "info")
