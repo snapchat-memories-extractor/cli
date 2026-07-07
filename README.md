@@ -1,30 +1,38 @@
 # Snapchat Memories Extractor
 
-# Warning
-
-The current version of the app does not work because Snapchat has changed the way it provides JSON data. The app is currently being reworked.
-
 ## Background
 
-Snapchat's data export gives you a JSON file with download links, dates, and GPS coordinates, but these are disconnected from the actual media. Downloaded files carry no metadata and open exactly as they were taken. Some download links even point to a ZIP archive containing the original file and its overlay (caption, stickers, drawings) as separate layers, rather than one merged file.
+Snapchat's data export gives you a JSON file with dates and GPS coordinates,
+and a folder of your actual memory files - but they're disconnected from
+each other. Exported files carry only datetime metadata and open exactly as they were
+taken. Some memories are also exported as two separate files rather than
+one merged image or video: a `-main` file (the original photo/video) and a
+`-overlay` file (the caption, stickers, and drawings you added, as a
+transparent PNG layer).
 
-This tool bridges that gap: it downloads your memories, merges overlays into the media, and embeds the correct date and location straight into each photo and video. For anyone who wants smaller files, it also supports re-encoding into JPEG XL and AV1, which cut file size by 20-40% and 30-50% respectively with no visible quality loss.
+This tool bridges that gap entirely offline: it pairs up `-main`/`-overlay`
+files, merges the overlay into the media, matches each pair back to its
+entry in the export JSON by embedded capture date, and embeds the correct
+location straight into each photo and video. For anyone who wants
+smaller files, it also supports re-encoding into JPEG XL and AV1, which cut
+file size by 20-40% and 30-50% respectively with no visible quality loss.
 
-Overlay merging, metadata embedding, and format conversion are all optional and can be toggled independently.
+Overlay merging, location metadata embedding, and format conversion are all optional
+and can be toggled independently.
 
 <p align="center">
   <img src="assets/demo.gif" width="100%" alt="Snapchat Memories Extractor CLI Demo">
-  <br><em>Downloads memories, transcodes to JXL/AV1, embeds metadata</em>
+  <br><em>Pairs and merges overlays, transcodes to JXL/AV1, embeds metadata</em>
 </p>
 
 ## Features
 
-- **Media download** — pulls images and videos from your Snapchat export JSON
-- **Overlay merging** — applies caption, sticker, and drawing layers from ZIP archives onto photos and videos
-- **Metadata embedding** — writes EXIF date/GPS into images and creation time/GPS into videos
+- **Local-first** — works entirely from an export already sitting on disk; no download links, no expired links, no network access at all
+- **Overlay merging** — applies caption, sticker, and drawing layers from `<id>-overlay` files onto photos and videos.
+- **Metadata embedding** — writes GPS into images and videos
 - **Image conversion** — JPEG → JPEG XL, lossless, 20-40% smaller
 - **Video conversion** — H.264 (default) or AV1 (SVT-AV1 / libaom-av1), with full quality and speed controls
-- **Resumable runs** — progressive JSON pruning makes it safe to Ctrl+C and resume later
+- **Interrupt-safe** — Ctrl+C finishes whatever pairs are already in flight before exiting cleanly, no half-written files left behind
 - **Zero system dependencies** — everything installs via pip
 
 ## Prerequisites
@@ -49,13 +57,15 @@ cd snapchat-memories-extractor
 ```
 
 
-### Step 3: Extract the ZIP File
+### Step 3: Set Up Your Export
 
 Once your Snapchat data export is ready and downloaded:
 
-1. Extract the ZIP file you received from Snapchat.
-2. Find the file named `memories_history.json` inside the extracted contents.
-3. You can either replace placeholder json file in the `/data` folder (if you wish), or simply specify the absolute path to the JSON file using the `--memories-json` (or `-mj`) flag when running the extractor.
+1. Extract the ZIP file you received from Snapchat (or multiple if you had a lot of memories).
+2. Inside, you'll find `memories_history.json` and the 'memories' folder. (in case if you have multiple 'memories' folders, combine all files from them into one folder.)
+3. Either move both 'memories' folder and json file into the `/data` folder (replacing the placeholders, if you wish), or point at their actual locations directly using
+`--memories-json` (`-mj`) and `--memories-folder` (`-mf`) arguments when running
+the tool.
 
 ### Step 4: Create a Virtual Environment
 
@@ -97,14 +107,14 @@ chmod +x libjxl-binaries/linux/cjxl
 
 ### Step 6: Run the Extractor
 
-If you moved `memories_history.json` into the `/data` folder:
+If you moved both `memories_history.json` and your memories folder into `/data`:
 ```bash
 python main.py
 ```
 
-Or specify the path directly:
+Or specify both paths directly:
 ```bash
-python main.py --memories-json /path/to/memories_history.json
+python main.py --memories-json /path/to/memories_history.json --memories-folder /path/to/memories
 ```
 
 **Done!** Your files will be saved to `downloads/`
@@ -141,10 +151,40 @@ python main.py --memories-json C:\Users\user\Downloads\memories_history.json
 </details>
 
 <details>
+<summary><b>Memories Folder Path: -mf / --memories-folder PATH</b></summary>
+
+**What it does:**
+- Specifies the path to the folder containing your exported memory files
+  (the `<id>-main.<ext>` / `<id>-overlay.<ext>` pairs)
+- **Default**: `data/memories` (relative to the project root)
+- Scanned recursively, so it's fine if Snapchat's export nests files into
+  dated subfolders
+- If you placed the folder in `/data`, you don't need this flag at all
+
+**Examples**:
+
+Use default path (`data/memories`):
+```bash
+python main.py
+```
+
+Specify a custom path:
+```bash
+python main.py -mf /home/user/Downloads/memories
+python main.py --memories-folder C:\Users\user\Downloads\memories
+```
+
+**Recommendations:**
+- **Default**: Simply move the folder to `data/` and run without this flag
+- **Custom path**: Use `-mf` if you don't want to move a large export, or want to keep it on an external drive
+
+</details>
+
+<details>
 <summary><b>Output Directory: -o / --output PATH</b></summary>
 
 **What it does:**
-- Sets a custom output directory for all downloaded and processed files
+- Sets a custom output directory for all processed files
 - **Default**: `downloads/` (relative to the project root)
 - The directory will be created automatically if it doesn't exist
 
@@ -200,114 +240,101 @@ python main.py --logs-path C:\Users\user\logs\snapchat
 </details>
 
 <details>
-<summary><b>Concurrent Downloads: -c / --concurrent N</b></summary>
+<summary><b>Concurrent Pairs: -c / --concurrent N</b></summary>
 
 **What it does:**
-- Controls the number of simultaneous downloads
-- **Default**: `10` concurrent downloads
-- Higher values = faster downloads, but may trigger rate limiting
-- Lower values = slower but more stable
+- Controls the number of media pairs processed simultaneously
+- **Default**: `10` pairs in parallel
+- This is CPU-bound work (compositing overlays, encoding video).
+- Higher values = faster processing on multi-core machines, but cost CPU and memory.
+- Lower values = slower but lighter on system resources
 
 **Examples**:
 
-Use default (10 concurrent downloads):
+Use default (10 in parallel):
 ```bash
 python main.py
 ```
 
-Conservative - 5 concurrent downloads:
+Conservative - 5 in parallel:
 ```bash
 python main.py -c 5
 ```
 
-Faster - 15 concurrent downloads:
+Faster - 15 in parallel, if you have the cores:
 ```bash
 python main.py -c 15
 ```
 
-Sequential - 1 download at a time (slowest, but safest):
+Sequential - 1 pair at a time (slowest, lightest):
 ```bash
 python main.py -c 1
 ```
 
 **Recommendations:**
-- **5-10 concurrent downloads**: Safe default, respectful to Snapchat's servers
-- **15-25 concurrent downloads**: Faster, works well on most home connections
-- **25+ concurrent downloads**: May trigger rate limiting or server throttling
-- **1 concurrent download**: Use only if experiencing connection issues
-
-> **Note**: Setting too high may result in rate limiting or failed downloads. If you experience issues, reduce the concurrent value.
+- **5-10 in parallel**: Safe default for most machines
+- **15+ in parallel**: Good if you have a high core-count CPU.
+- **1 in parallel**: Use if you're constrained on memory or want predictable, sequential logs
 
 </details>
 
 <details>
-<summary><b>Retry Attempts: -a / --attempts N</b></summary>
+<summary><b>Overlay Handling: -om / --overlay-mode [on|off|both]</b></summary>
 
 **What it does:**
-- Automatically retries the entire download process if files fail
-- **Default**: `3` attempts (runs the download process up to 3 times)
-- Useful for handling temporary network errors, server timeouts, or rate limiting
-- Stops early if all downloads succeed before max attempts
+- Snapchat stores your memories separately with layers for text, stickers, drawings, etc. (overlays) you added.
+- **`on` (default)**: Composites the overlay into the main file, exactly like you see it in the Snapchat app, then deletes both original source files
+- **`off`**: Deletes the overlay file without compositing it, leaving the original file untouched
+- **`both`**: Creates copy of original file, applies overlay on it and then deletes the overlay, leaving you with both copies of memory.
 
 **Examples**:
 
-Default - try up to 3 times:
+Default behavior - composite overlays, keep only the merged result:
 ```bash
 python main.py
 ```
 
-Single attempt - no retries:
+Skip overlays entirely - keep only clean originals:
 ```bash
-python main.py -a 1
+python main.py -om off
 ```
 
-Aggressive retries - try up to 5 times:
+Keep both the clean original and a separate overlaid version:
 ```bash
-python main.py -a 5
+python main.py -om both
 ```
 
 **Recommendations:**
-- **3 attempts** (default): Good balance for most situations
-- **1 attempt**: Use if you want manual control over retries
-- **5+ attempts**: Use for unstable connections or large archives
-
-**How it works:**
-1. First attempt downloads all files from the JSON
-2. If any files fail, waits 2 seconds then retries ALL failed files
-3. Continues until all files succeed or max attempts reached
-4. Progress resets between attempts for clarity
-
-> **Example**: If 5 out of 100 files fail on attempt 1, attempt 2 only retries those 5 failed files.
+- **`on` (default)**: Best for preserving your memories exactly as you saved them in Snapchat, without keeping duplicate files around
+- **`off`**: Best if you want clean, unedited originals for editing or archival, and don't care about the caption/sticker layer
+- **`both`**: Best if you want both versions and have the disk space to spare - note that combined with `--video-codec av1`, this means every overlaid video gets encoded twice
 
 </details>
 
 <details>
-<summary><b>Media Overlays: -O / --no-overlay</b></summary>
+<summary><b>Strict Location: -s / --strict</b></summary>
 
 **What it does:**
-- Snapchat stores your memories with separate layers for text, stickers, drawings, etc. you added
-- **By default**, this tool automatically applies those edits on top of your photos and videos, just like you see them in the Snapchat app
-- **Images**: Text, stickers, drawings, etc. are permanently added to the image
-- **Videos**: Text, stickers, drawings, etc. are burned into the video throughout playback
-- Use `--no-overlay` if you want the original media **without** any of your edits
+- By default, a file that doesn't have location entry in JSON is left
+  untouched on disk (no metadata written)
+- With `--strict`, files without location entry are **permanently deleted** instead
 
 **Examples**:
 
-Default behavior - downloads photos/videos WITH text, stickers, drawings, etc.:
+Default - files without location are left alone:
 ```bash
 python main.py
 ```
 
-Skip overlays - downloads original photos/videos WITHOUT any edits:
+Strict - delete files that don't have location:
 ```bash
-python main.py -O
+python main.py -s
+python main.py --strict
 ```
 
 **Recommendations:**
-- **Default (with overlays)**: Best for preserving your memories exactly as you saved them in Snapchat
-- **With `--no-overlay`**: Best if you want clean, unedited original photos/videos for editing or archival purposes
-
-> **Example**: If you saved a photo with "Best day ever! 🎉" text, heart stickers, and some doodles on it in Snapchat, the default download will include all of that. With `--no-overlay`, you get the clean original photo without any edits.
+- **Default**: Safest option. Review what ends up unmatched before deciding whether to clean it up yourself
+- **`--strict`**: Only use once you're confident you don't need files without location - this deletes your local copy of them, permanently
 
 </details>
 
@@ -315,28 +342,25 @@ python main.py -O
 <summary><b>Metadata Embedding: -M / --no-metadata</b></summary>
 
 **What it does:**
-- **By default**, this tool embeds date/time and GPS location metadata into your downloaded photos and videos
-- **Images**: Writes EXIF data (DateTimeOriginal, GPS coordinates) directly into the image file
-- **Videos**: Writes creation time and GPS location into the video metadata
+- **By default**, this tool embeds GPS location metadata into every photo and video that has GPS data available
 - Use `--no-metadata` if you want to skip writing metadata entirely
+- Files with no GPS data available will never get metadata regardless of this flag, as there's nothing to write
 
 **Examples**:
 
-Default behavior - embeds date/time and location metadata:
+Default behavior - embeds location metadata on matched files:
 ```bash
 python main.py
 ```
 
-Skip metadata - downloads files WITHOUT embedded metadata:
+Skip metadata - process files WITHOUT embedded GPS metadata:
 ```bash
 python main.py -M
 ```
 
 **Recommendations:**
-- **Default (with metadata)**: Best for organizing photos by date and viewing them in photo apps with proper timestamps and locations
-- **With `--no-metadata`**: Use if you prefer to manage metadata separately or want faster downloads
-
-> **Note**: When metadata is embedded, your photos will display the correct capture date in photo viewers, and you can view the location where each memory was taken (if location data was available).
+- **Default (with metadata)**: Best for organizing photos by map (if your photo app supports this feature) and viewing them in photo apps with proper locations
+- **With `--no-metadata`**: Use if you prefer to manage GPS metadata separately or want faster processing
 
 </details>
 
@@ -379,7 +403,7 @@ python main.py -q 100
 <summary><b>JPGXL Conversion: -J / --jxl</b></summary>
 
 **What it does:**
-- **By default**, downloaded JPEG images are kept in their original **JPEG** format
+- **By default**, processed JPEG images are kept in their original **JPEG** format
 - Use `--jxl` to convert JPEG images to the modern **JPGXL (JXL)** format
 - JPGXL provides lossless compression with typically **20-40% better compression** than JPEG
 - All metadata (date, GPS coordinates, image properties) is preserved during conversion
@@ -579,27 +603,6 @@ python main.py -pf yuv444p
 - `yuv420p` for maximum compatibility with all devices and players
 - `yuv420p10le` if you need 10-bit output for HDR workflows
 - Only change this if you know your target device or player supports the chosen format
-
-</details>
-
-<details>
-<summary><b>Request Timeout: -t / --request-timeout SECONDS</b></summary>
-
-**What it does:**
-- Sets how many seconds the program will wait for a response from Snapchat's servers before giving up
-- **Default**: `30` seconds
-
-**Examples**:
-
-Wait up to 60 seconds for each request:
-```bash
-python main.py -t 60
-python main.py --request-timeout 60
-```
-
-**Recommendations:**
-- Increase for slow or unstable connections
-- Decrease if you want faster failure on bad links
 
 </details>
 
@@ -866,7 +869,7 @@ Tune for VMAF (Netflix's perceptual quality metric):
 python main.py --video-codec av1 --av1-encoder libaom-av1 --av1-tune vmaf_with_preprocessing
 ```
 
-* Recommendations:**
+**Recommendations:**
 - Leave unset for most uses — the default produces good results across all content types
 - `ssim` or `vmaf_with_preprocessing` are reasonable choices if you want to optimise for perceived visual quality
 
@@ -958,46 +961,41 @@ python main.py --video-codec av1 --film-grain 8 --grain-denoise 0
 
 ```mermaid
 flowchart TD
-    Init[Load config and CLI optionsstart JSON logger] --> Read
+    Init[Load config and CLI optionsstart JSON logger] --> Scan
+    Scan[Recursively scan memories folderpair id-main / id-overlay files] --> LoadJson[Load memories_history.jsonfilter entries with no usable GPS]
+    LoadJson --> Pool[Submit pairs to thread poolN concurrent workers]
 
-    subgraph Loop ["Retry loop - up to max_attempts"]
+    Pool --> HasMain
+
+    subgraph PerPair ["Per pair - runs concurrently"]
         direction TB
-        Read[Read memories_history.json] --> Build[Parse rows into Memory objects]
-        Build --> Pool[Submit to thread poolN concurrent workers]
+        HasMain{main file exists?}
+        HasMain -->|no| FailPair[[log PAIR, count as failed]]
+        HasMain -->|yes| Mode{overlay-mode?}
     end
 
-    Pool --> Strict
-
-    subgraph PerItem ["Per memory item - runs concurrently"]
+    subgraph OverlayStage ["Overlay stage - runs before matching"]
         direction TB
-        Strict{strict-location onand no GPS?}
-        Strict -->|skip| Fail[[count as failed]]
-        Strict -->|ok| Get[GET media_download_url]
-        Get --> Status{HTTP status 400+?}
-        Status -->|yes| Fail
-        Status -->|no| Save[Write bytes to diskresolve filename clashes]
-        Save --> IsZip{is_zip response?}
-        IsZip -->|no| MediaType{media_type?}
+        Mode -->|off| Off[Delete overlay fileif present]
+        Mode -->|on| On[Composite overlay into mainPillow / ffmpeg overlay filterdelete both sources]
+        Mode -->|both| Both[Composite into id-overlaid filekeep main, delete overlay source]
     end
 
-    IsZip -->|yes| Zip
+    Off --> ReadDT
+    On --> ReadDT
+    Both --> ReadDT
 
-    subgraph ZipExtract ["Zip: overlay extraction"]
-        direction TB
-        Zip[Extract media and PNG overlayfrom zip, delete .zip]
-        Zip --> Overlay{apply-overlay on?}
-        Overlay -->|yes| CompType{.jpg or .mp4?}
-        CompType -->|.jpg| CompImg[Composite overlayPillow alpha_composite]
-        CompType -->|.mp4| CompVid[Composite overlayffmpeg overlay filter]
-        Overlay -->|no| Raw[Write extracted bytes as-is]
-    end
+    ReadDT[Read embedded capture datetimeEXIF DateTimeOriginal or ffprobe creation_time]
+    ReadDT --> Match{matches exactly onejson entry?}
 
-    MediaType -->|Image| MetaI
-    MediaType -->|Video| ConvQ
-    CompImg --> MetaI
-    CompVid --> ConvQ
-    Raw -->|.jpg| MetaI
-    Raw -->|.mp4| ConvQ
+    Match -->|no / ambiguous| StrictQ{strict on?}
+    StrictQ -->|yes| DeleteUnmatched[[delete file, count as unmatched]]
+    StrictQ -->|no| KeepUnmatched[[leave file untouched, count as unmatched]]
+
+    Match -->|yes, unique| MediaType{file extension?}
+
+    MediaType -->|.jpg / .jpeg| MetaI
+    MediaType -->|other| ConvQ
 
     subgraph Img ["Image pipeline"]
         direction TB
@@ -1027,12 +1025,12 @@ flowchart TD
     ImgOut2 --> Finalize
     VidOut --> Finalize
     VidOut2 --> Finalize
-    Fail --> Finalize
+    DeleteUnmatched --> Finalize
+    KeepUnmatched --> Finalize
+    FailPair --> Finalize
 
-    Finalize[Prune item from JSON<br/>update stats, redraw progress UI]
-    Finalize --> More{failures remain and<br/>attempts left?}
-    More -->|yes| Read
-    More -->|no| Done([Print final summary and exit])
+    Finalize[Update stats, redraw progress UI]
+    Finalize --> Done([All pairs finished:print final summary and exit])
 ```
 
 </details>
@@ -1040,20 +1038,15 @@ flowchart TD
 ## Troubleshooting
 
 <details>
-<summary><b>Download Links Expired</b></summary>
-
-Snapchat download links expire after a period of time. If downloads fail, try to export a fresh `memories_history.json` from Snapchat and replace the old one in the `data/` folder.
-
-</details>
-
-<details>
-<summary><b>Missing 'memories_history.json'</b></summary>
+<summary><b>Missing 'memories_history.json' or Memories Folder</b></summary>
 
 When exporting your data from Snapchat, make sure you select **both** options:
 - **Export your Memories**
 - **Export JSON Files**
 
-Without these options, the JSON file won't be included in your export.
+Without both, either the JSON file or the actual media files won't be
+included in your export, and the tool will fail its startup check for
+whichever one is missing.
 
 </details>
 
@@ -1089,9 +1082,8 @@ GPLv3 License — see [LICENSE](LICENSE) file.
 | Component | Purpose | License | Source |
 |-----------|----------|----------|---------|
 | Python | Runtime | PSF License | https://www.python.org/psf/license/ |
-| requests | HTTP downloads | Apache-2.0 | https://github.com/psf/requests |
 | Pydantic | Configuration and data validation | MIT | https://github.com/pydantic/pydantic |
 | Pillow | Image loading and overlay compositing | HPND | https://python-pillow.org/ |
-| piexif | Writing EXIF metadata to JPEG files | MIT | https://github.com/hMatoba/Piexif |
+| piexif | Reading/writing EXIF metadata on JPEG files | MIT | https://github.com/hMatoba/Piexif |
 | imageio-ffmpeg | Bundled FFmpeg executable management | BSD-2-Clause | https://github.com/imageio/imageio-ffmpeg |
 | libjxl (`cjxl`) | JPEG XL lossless conversion | BSD-3-Clause | https://github.com/libjxl/libjxl |
