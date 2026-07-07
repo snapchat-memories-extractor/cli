@@ -22,7 +22,7 @@ def process_image(
         _write_image_metadata(memory, file_path, stage_concurrency)
 
     if convert_to_jxl:
-        file_path = JXLConverter(file_path).run()
+        file_path = _convert_to_jxl(file_path, stage_concurrency)
 
     return file_path
 
@@ -38,3 +38,14 @@ def _write_image_metadata(
 
     with stage_concurrency.gps_writer_slot():
         ImageMetadataWriter(memory, file_path).write_image_metadata()
+
+
+def _convert_to_jxl(
+    file_path: Path,
+    stage_concurrency: "StageConcurrency | None",
+) -> Path:
+    if stage_concurrency is None:
+        return JXLConverter(file_path).run()
+
+    with stage_concurrency.jxl_converter_slot():
+        return JXLConverter(file_path).run()
