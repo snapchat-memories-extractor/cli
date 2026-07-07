@@ -8,16 +8,20 @@ from src.memories import Memory
 
 
 class ImageMetadataWriter:
-    def __init__(self, memory: Memory, file_path: Path) -> None:
+    def __init__(self, memory: Memory | None, file_path: Path) -> None:
         self.memory = memory
         self.file_path = file_path
 
         self.exif_metadata = {"0th": {}, "Exif": {}, "GPS": {}}
 
-    def write_image_metadata(self) -> None:
+    def write_image_metadata(self) -> bool:
+        if self.memory is None:
+            return False
+
         self._set_datetime_fields()
         self._set_gps_fields()
         self._save_image_with_exif()
+        return True
 
     def _set_datetime_fields(self) -> None:
         datetime_bytes = self.memory.exif_datetime.encode("utf-8")
