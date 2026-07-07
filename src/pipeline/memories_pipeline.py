@@ -8,6 +8,7 @@ from src.matcher import ExifDatetimeReader, LocationMatcher
 from src.media_dispatcher import process_media
 from src.memories import Memory, MemoriesRepository
 from src.overlay import OverlayStage
+from src.pipeline.stage_concurrency import StageConcurrency
 from src.scanner import FolderScanner, MediaPair
 from src.ui import StatsManager, UpdateUI
 
@@ -34,9 +35,10 @@ class MemoriesPipeline:
             return
 
         matcher = LocationMatcher(self._load_memories())
+        stage_concurrency = StageConcurrency.from_options(Config.cli_options)
         StatsManager.total_files = len(pairs)
 
-        futures = self._submit_pairs(pairs, matcher)
+        futures = self._submit_pairs(pairs, matcher, stage_concurrency)
 
         try:
             self._collect_results(futures)
@@ -49,9 +51,12 @@ class MemoriesPipeline:
         return [Memory.model_validate(item) for item in raw_items]
 
     def _submit_pairs(
-        self, pairs: list[MediaPair], matcher: LocationMatcher
+        self,
+        pairs: list[MediaPair],
+        matcher: LocationMatcher,
+        stage_concurrency: StageConcurrency,
     ) -> dict[Future, MediaPair]:
-        max_workers = Config.cli_options["max_concurrent_pairs"]
+        max_workers = stage_concurrency.pair_worker_capacity(Config.cli_options)
         executor = ThreadPoolExecutor(max_workers=max_workers)
 
         futures = {}

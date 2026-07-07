@@ -39,6 +39,19 @@ class StageConcurrency:
             av1_converter=StageLimiter(options["av1_converter_concurrency"]),
         )
 
+    def pair_worker_capacity(self, options: dict) -> int:
+        active_limits = []
+        if options["overlay_mode"] != "off":
+            active_limits.append(self.overlay_applier.max_workers)
+        if options["write_metadata"]:
+            active_limits.append(self.gps_writer.max_workers)
+        if options["convert_to_jxl"]:
+            active_limits.append(self.jxl_converter.max_workers)
+        if options["video_codec"] == "av1":
+            active_limits.append(self.av1_converter.max_workers)
+
+        return max(sum(active_limits), 1)
+
     @contextmanager
     def overlay_applier_slot(self) -> Iterator[None]:
         with self.overlay_applier.slot():
