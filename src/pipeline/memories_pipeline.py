@@ -96,15 +96,17 @@ class MemoriesPipeline:
         if file_path is None:
             return result
 
-        captured_at = ExifDatetimeReader(file_path).run()
-        memory = matcher.match_one(pair.media_id, captured_at)
-        result.matched = memory is not None
+        memory = None
+        if Config.cli_options["write_metadata"]:
+            captured_at = ExifDatetimeReader(file_path).run()
+            memory = matcher.match_one(pair.media_id, captured_at)
+            result.matched = memory is not None
 
-        if memory is None and Config.cli_options["strict_location"]:
-            file_path.unlink(missing_ok=True)
-            result.deleted_unmatched = True
-            log(f"Deleted unmatched file for '{pair.media_id}' (--strict)", "info")
-            return result
+            if memory is None and Config.cli_options["strict_location"]:
+                file_path.unlink(missing_ok=True)
+                result.deleted_unmatched = True
+                log(f"Deleted unmatched file for '{pair.media_id}' (--strict)", "info")
+                return result
 
         process_media(memory, file_path)
         result.processed = True
