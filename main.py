@@ -22,7 +22,7 @@ if __name__ == "__main__":
     Config.initialize_config()
     LogInitializer().configure_logger()
 
-    StatsManager()
+    StatsManager.new_run()
 
     log("Application started", "info")
 
