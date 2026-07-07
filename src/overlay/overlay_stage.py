@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from src import FileNameResolver
 from src.config import Config
 from src.logger import log
 from src.overlay.image_composer import ImageComposer
@@ -72,17 +71,18 @@ class OverlayStage:
         overlaid_path = self.pair.main_path.with_name(
             f"{self.pair.media_id}-overlaid{self.pair.main_path.suffix}"
         )
-        if overlaid_path.exists():
-            overlaid_path = FileNameResolver(overlaid_path).run()
+        temp_output = overlaid_path.with_name(
+            f"{overlaid_path.stem}.compositing{overlaid_path.suffix}"
+        )
 
-        self._composite(overlaid_path)
+        self._composite(temp_output)
 
-        if not self._is_valid_output(overlaid_path):
-            self._log_overlay_failure(overlaid_path)
+        if not self._is_valid_output(temp_output):
+            self._log_overlay_failure(temp_output)
             return self.pair.main_path
 
-        # "both" keeps <id>-main untouched, only the overlay source goes.
         self.pair.overlay_path.unlink()
+        temp_output.replace(overlaid_path)
         return overlaid_path
 
     def _composite(self, output_path: Path) -> None:
