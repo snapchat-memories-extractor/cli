@@ -240,41 +240,53 @@ python main.py --logs-path C:\Users\user\logs\snapchat
 </details>
 
 <details>
-<summary><b>Concurrent Pairs: -c / --concurrent N</b></summary>
+<summary><b>Stage Concurrency: --overlay-applier-concurrency / --gps-writer-concurrency / --jxl-converter-concurrency / --av1-converter-concurrency N</b></summary>
 
 **What it does:**
-- Controls the number of media pairs processed simultaneously
-- **Default**: `10` pairs in parallel
-- This is CPU-bound work (compositing overlays, encoding video).
-- Higher values = faster processing on multi-core machines, but cost CPU and memory.
-- Lower values = slower but lighter on system resources
+- Controls how many expensive operations can run at once for each processing stage
+- **Default**: `10` for every stage
+- Overlay concurrency applies only when `--overlay-mode` is `on` or `both`
+- GPS writer concurrency applies only when metadata writing is enabled
+- JXL converter concurrency applies only when `--jxl` is enabled
+- AV1 converter concurrency applies only when `--video-codec av1` is enabled
+- If a stage is disabled, its concurrency value is ignored
+
+**Flags:**
+
+| Stage | Long flag | Short flag | Default |
+|---|---|---|---|
+| Overlay applier | `--overlay-applier-concurrency N` | `-oac N` | `10` |
+| GPS metadata writer | `--gps-writer-concurrency N` | `-gwc N` | `10` |
+| JXL converter | `--jxl-converter-concurrency N` | `-jcc N` | `10` |
+| AV1 converter | `--av1-converter-concurrency N` | `-acc N` | `10` |
 
 **Examples**:
 
-Use default (10 in parallel):
+Use defaults:
 ```bash
 python main.py
 ```
 
-Conservative - 5 in parallel:
+Limit overlay compositing and metadata writing:
 ```bash
-python main.py -c 5
+python main.py --overlay-applier-concurrency 4 --gps-writer-concurrency 6
 ```
 
-Faster - 15 in parallel, if you have the cores:
+Run more JXL conversions in parallel:
 ```bash
-python main.py -c 15
+python main.py --jxl --jxl-converter-concurrency 12
 ```
 
-Sequential - 1 pair at a time (slowest, lightest):
+Set AV1 concurrency. This is ignored unless AV1 conversion is enabled:
 ```bash
-python main.py -c 1
+python main.py --av1-converter-concurrency 2
+python main.py --video-codec av1 --av1-converter-concurrency 2
 ```
 
 **Recommendations:**
-- **5-10 in parallel**: Safe default for most machines
-- **15+ in parallel**: Good if you have a high core-count CPU.
-- **1 in parallel**: Use if you're constrained on memory or want predictable, sequential logs
+- **Overlay/GPS 5-10**: Safe default range for most machines
+- **JXL/AV1 1-4**: Better for CPU-heavy conversion on laptops or smaller CPUs
+- **Higher values**: Useful on high core-count CPUs, but watch memory and thermals
 
 </details>
 
@@ -1059,6 +1071,7 @@ AV1 encoding is significantly more CPU-intensive than h264. Try the following to
 
 - Use SVT-AV1 (default): `--av1-encoder svt-av1`
 - Increase the preset: `--av1-preset 10` or higher (up to 13)
+- Lower simultaneous AV1 encodes: `--av1-converter-concurrency 1` or `2`
 - Enable tiling to use more CPU cores: `--av1-tile-columns 1 --av1-tile-rows 1`
 - Raise the CRF slightly to reduce the amount of work: `--crf 40`
 
