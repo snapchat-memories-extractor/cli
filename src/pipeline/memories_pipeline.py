@@ -123,7 +123,7 @@ class MemoriesPipeline:
                 log(f"Deleted unmatched file for '{pair.media_id}' (--strict)", "info")
                 return result
 
-        process_media(memory, file_path)
+        process_media(memory, file_path, stage_concurrency)
         result.processed = True
         return result
 
