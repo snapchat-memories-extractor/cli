@@ -3,22 +3,25 @@ from typing import ClassVar
 
 
 class StatsManager:
-    current_attempt = 0
     total_files = 0
     start_time = time()
-    successful_downloads_count = 0
-    failed_downloads_count = 0
-    total_bytes = 0
+
+    processed_count = 0
+    failed_count = 0
+    overlay_applied_count = 0
+    matched_count = 0
+    unmatched_count = 0
+    deleted_unmatched_count = 0
+
     errors: ClassVar[list[str]] = []
-    completed_indices: ClassVar[set[int]] = set()
 
     @classmethod
-    def new_attempt(cls) -> None:
-        cls.current_attempt += 1
-        cls.total_files = cls.failed_downloads_count
+    def new_run(cls) -> None:
         cls.start_time = time()
-        cls.successful_downloads_count = 0
-        cls.failed_downloads_count = 0
-        cls.total_bytes = 0
+        cls.processed_count = 0
+        cls.failed_count = 0
+        cls.overlay_applied_count = 0
+        cls.matched_count = 0
+        cls.unmatched_count = 0
+        cls.deleted_unmatched_count = 0
         cls.errors = []
-        cls.completed_indices = set()

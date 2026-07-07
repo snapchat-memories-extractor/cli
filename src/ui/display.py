@@ -1,6 +1,5 @@
 from time import time
 
-from src.config import Config
 from src.ui.format_time import format_time
 from src.ui.generate_progress_bar import GenerateProgressBar
 from src.ui.stats_manager import StatsManager
@@ -11,15 +10,15 @@ display_size = 70
 class Display:
     def __init__(self) -> None:
         total = StatsManager.total_files
-        current = (
-            StatsManager.successful_downloads_count
-            + StatsManager.failed_downloads_count
-        )
+        current = StatsManager.processed_count
         self.remaining = total - current
         self.progress_bar = GenerateProgressBar(current, total).run()
         self.percent = (current / total * 100) if total > 0 else 0
-        self.successful = StatsManager.successful_downloads_count
-        self.failed = StatsManager.failed_downloads_count
+        self.processed = StatsManager.processed_count
+        self.failed = StatsManager.failed_count
+        self.matched = StatsManager.matched_count
+        self.unmatched = StatsManager.unmatched_count
+        self.overlay_applied = StatsManager.overlay_applied_count
         self.elapsed_time = int(time() - StatsManager.start_time)
         self.eta = self._calculate_eta(current, self.elapsed_time, self.remaining)
 
@@ -30,7 +29,7 @@ class Display:
         if state == "loading":
             line3, line4 = self._get_loading_display_lines()
         elif state == "interrupted":
-            line3, line4 = self._get_download_interruption_display_lines()
+            line3, line4 = self._get_interruption_display_lines()
         elif state == "finished":
             line3, line4 = self._get_finished_display_lines()
         else:
@@ -46,10 +45,8 @@ class Display:
         print(f"╚{'═' * display_size}╝")
 
     def _get_first_line(self) -> str:
-        attempt = str(StatsManager.current_attempt)
-        total_attempts = Config.cli_options["max_attempts"]
         left = " SNAPCHAT MEMORIES DOWNLOADER"
-        right = f"ATTEMPT {attempt} / {total_attempts} "
+        right = "LOCAL FOLDER PIPELINE "
         return left.ljust(display_size - len(right)) + right
 
     @staticmethod
@@ -63,19 +60,19 @@ class Display:
 
     @staticmethod
     def _get_loading_display_lines() -> tuple[str, str]:
-        line3 = "  ⏳ Initializing, scanning your memories..."
-        line4 = "  📋 Preparing download list..."
+        line3 = "  ⏳ Initializing, scanning your memories folder..."
+        line4 = "  📋 Pairing main/overlay files..."
         return line3, line4
 
-    def _get_download_interruption_display_lines(self) -> tuple[str, str]:
-        line3 = "  ⚠️ Download interrupted by user."
-        line4 = "  ⏳ Processing unfinished downloads, please wait..."
+    def _get_interruption_display_lines(self) -> tuple[str, str]:
+        line3 = "  ⚠️ Processing interrupted by user."
+        line4 = "  ⏳ Finishing in-flight pairs, please wait..."
         return line3, line4
 
     def _get_finished_display_lines(self) -> tuple[str, str]:
-        line3 = "  ✅ Download process complete."
+        line3 = "  ✅ Processing complete."
         line4 = (
-            f"  📥 Downloaded: {self.successful}  │  "
+            f"  📦 Processed: {self.processed}  │  "
             f"❌ Failed: {self.failed}  │  "
             f"🕐 Total Time: {format_time(self.elapsed_time):>10}"
         )
@@ -83,9 +80,9 @@ class Display:
 
     def _get_base_display_lines(self) -> tuple[str, str]:
         line3 = (
-            f"  📥 Downloaded: {self.successful}  │  "
-            f"❌ Failed: {self.failed}  │  "
-            f"📁 Remaining: {self.remaining}"
+            f"  📦 Processed: {self.processed}  │  "
+            f"📍 Matched: {self.matched}  │  "
+            f"❓ Unmatched: {self.unmatched}"
         )
         line4 = (
             f"  🕐  Elapsed: {format_time(self.elapsed_time):>10}  │  "
@@ -106,4 +103,4 @@ class Display:
 
     @staticmethod
     def _has_double_width(character: str) -> bool:
-        return character in "📥❌📁🕐⏳📋⚠️✅"
+        return character in "❌🕐⏳📋⚠️✅📦📍❓"
