@@ -18,7 +18,17 @@ def get_cli_args() -> argparse.Namespace:
         type=str,
         default=None,
         metavar="PATH",
-        help="Path to the memories JSON file (default: /data/memories_history.json). Short: -mj",
+        help="Path to the memories JSON file (default: ./data/memories_history.json). Short: -mj",
+    )
+    parser.add_argument(
+        "--memories-folder",
+        "-mf",
+        type=str,
+        default=None,
+        metavar="PATH",
+        help="Path to the local Snapchat export folder containing \
+            <id>-main / <id>-overlay media files (default: ./data/memories). \
+            Short: -mf",
     )
     parser.add_argument(
         "--output",
@@ -26,7 +36,7 @@ def get_cli_args() -> argparse.Namespace:
         type=str,
         default=None,
         metavar="PATH",
-        help="Custom output directory for downloaded files (default: ./downloads). Short: -o",
+        help="Custom output directory for processed files (default: ./downloads). Short: -o",
     )
     parser.add_argument(
         "--logs-path",
@@ -45,20 +55,13 @@ def get_cli_args() -> argparse.Namespace:
         help="Seconds to wait for ffmpeg operations (default: 60). Short: -f",
     )
     parser.add_argument(
-        "--request-timeout",
-        "-t",
-        type=int,
-        default=30,
-        metavar="SECONDS",
-        help="Seconds to wait for HTTP requests (default: 30). Short: -t",
-    )
-    parser.add_argument(
         "--concurrent",
         "-c",
         type=int,
         default=10,
         metavar="N",
-        help="Concurrent downloads (default: 10). Short: -c",
+        help="Number of media pairs (main + overlay) to process in parallel (default: 10). \
+            This is CPU-bound work Short: -c",
     )
     parser.add_argument(
         "--overlay-mode",
@@ -81,20 +84,13 @@ def get_cli_args() -> argparse.Namespace:
         help="Skip writing metadata (default: metadata written). Short: -M",
     )
     parser.add_argument(
-        "--attempts",
-        "-a",
-        type=int,
-        default=3,
-        metavar="N",
-        help="Max retry attempts (default: 3). Short: -a",
-    )
-    parser.add_argument(
         "--strict",
         "-s",
         default=False,
         dest="strict_location",
         action="store_true",
-        help="Fail downloads when location metadata is missing. Short: -s",
+        help="Permanently delete local media files with no matching \
+            location data in the JSON entry. Short: -s",
     )
     parser.add_argument(
         "--jpeg-quality",
