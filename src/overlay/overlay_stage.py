@@ -7,6 +7,7 @@ from src.overlay.video_composer import VideoComposer
 from src.scanner import MediaPair
 
 VIDEO_SUFFIXES = {".mp4"}
+OVERLAY_OUTPUT_FAILED = "Overlay compositing produced no usable output"
 
 
 class OverlayStage:
@@ -48,7 +49,7 @@ class OverlayStage:
 
         if not self._is_valid_output(temp_output):
             self._log_overlay_failure(temp_output)
-            return self.pair.main_path
+            raise RuntimeError(OVERLAY_OUTPUT_FAILED)
 
         # Only delete sources after the composited output is confirmed good.
         self.pair.main_path.unlink()
@@ -73,7 +74,7 @@ class OverlayStage:
 
         if not self._is_valid_output(temp_output):
             self._log_overlay_failure(temp_output)
-            return self.pair.main_path
+            raise RuntimeError(OVERLAY_OUTPUT_FAILED)
 
         self.pair.overlay_path.unlink()
         temp_output.replace(overlaid_path)

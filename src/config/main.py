@@ -12,6 +12,7 @@ class Config:
     memories_folder: Path = None
     output_folder: Path = None
     logs_folder: Path = None
+    failures_folder: Path = None
     cli_options: dict = None
 
     @classmethod
@@ -22,6 +23,7 @@ class Config:
         cls.memories_folder = cls._get_memories_folder()
         cls.output_folder = cls._get_output_folder()
         cls.logs_folder = cls._get_logs_folder()
+        cls.failures_folder = cls._get_failures_folder()
         ensure_directories(cls.output_folder, cls.logs_folder)
 
     @classmethod
@@ -47,3 +49,7 @@ class Config:
         if cls.cli_options["logs_path"]:
             return Path(cls.cli_options["logs_path"])
         return Path("logs")
+
+    @classmethod
+    def _get_failures_folder(cls) -> Path:
+        return Path("src/failures")

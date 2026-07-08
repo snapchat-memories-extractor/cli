@@ -9,6 +9,7 @@ from src.media_dispatcher.media_dispatcher import IMAGE_SUFFIXES
 from src.memories import MemoriesRepository, Memory
 from src.metadata.image_metadata_writer import ImageMetadataWriter
 from src.metadata.video_metadata_writer import VideoMetadataWriter
+from src.pipeline.failure_store import FailureStore
 from src.pipeline.stage_concurrency import StageConcurrency
 from src.ui import StatsManager
 
@@ -20,8 +21,13 @@ class MetadataResult:
 
 
 class MetadataPhase:
-    def __init__(self, stage_concurrency: StageConcurrency) -> None:
+    def __init__(
+        self,
+        stage_concurrency: StageConcurrency,
+        failure_store: FailureStore,
+    ) -> None:
         self.stage_concurrency = stage_concurrency
+        self.failure_store = failure_store
 
     def run(self, media_files: list[Path]) -> set[Path]:
         if not Config.cli_options["write_metadata"]:
@@ -65,6 +71,7 @@ class MetadataPhase:
             except Exception as error:
                 failed_files.add(file_path)
                 StatsManager.failed_count += 1
+                self.failure_store.move_file(file_path)
                 log(
                     f"Metadata stage failed for '{file_path}': {error}",
                     "error",

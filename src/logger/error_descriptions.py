@@ -7,5 +7,6 @@ ERROR_DESCRIPTIONS = {
     "OVR": "Overlay error - Failed to apply overlay",
     "PAIR": "Pairing error - overlay file has no matching main file",
     "MATCH": "Matching error - ambiguous or missing datetime match to json entry",
+    "META": "Metadata error - failed to write metadata",
     "SCAN": "Folder scan error - failed to enumerate the memories folder",
 }

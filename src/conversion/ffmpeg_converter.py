@@ -6,6 +6,8 @@ from imageio_ffmpeg import get_ffmpeg_exe
 from src.config import Config, FFmpegConfig
 from src.logger import log
 
+VIDEO_CONVERSION_FAILED = "Video conversion failed"
+
 
 class VideoConverter:
     def __init__(self, file_path: Path) -> None:
@@ -23,7 +25,7 @@ class VideoConverter:
                 f"ffmpeg conversion failed for {self.file_path}: {error}",
                 "warning",
             )
-            return self.file_path
+            raise RuntimeError(VIDEO_CONVERSION_FAILED) from error
 
         temp_path.replace(self.file_path)
         return self.file_path

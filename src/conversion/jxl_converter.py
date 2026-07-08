@@ -6,6 +6,10 @@ from pathlib import Path
 from src.config import Config
 from src.logger import log
 
+CJXL_NOT_FOUND = "cjxl binary not found"
+JXL_CONVERSION_FAILED = "JXL conversion failed"
+JXL_OUTPUT_MISSING = "JXL conversion output missing"
+
 
 class JXLConverter:
     def __init__(self, input_path: Path) -> None:
@@ -16,7 +20,7 @@ class JXLConverter:
             return self.input_path
         cjxl_path = JXLConverter._get_cjxl_path()
         if cjxl_path is None:
-            return self.input_path
+            raise RuntimeError(CJXL_NOT_FOUND)
         output_path = self.input_path.with_suffix(".jxl")
         command = self._build_cjxl_command(cjxl_path, output_path)
         timeout = Config.cli_options["cjxl_timeout"]
@@ -25,8 +29,10 @@ class JXLConverter:
         )
         if result.returncode != 0:
             self._log_cjxl_failure(result)
-            return self.input_path
-        if output_path.exists() and self.input_path.exists():
+            raise RuntimeError(JXL_CONVERSION_FAILED)
+        if not output_path.exists():
+            raise RuntimeError(JXL_OUTPUT_MISSING)
+        if self.input_path.exists():
             self.input_path.unlink()
         return output_path
 

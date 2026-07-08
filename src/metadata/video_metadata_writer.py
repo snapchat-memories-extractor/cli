@@ -7,6 +7,8 @@ from src.config import Config
 from src.logger import log
 from src.memories import Memory
 
+VIDEO_METADATA_FAILED = "Video metadata write failed"
+
 
 class VideoMetadataWriter:
     def __init__(self, memory: Memory, file_path: Path) -> None:
@@ -29,6 +31,7 @@ class VideoMetadataWriter:
             temporary_video_path.replace(self.file_path)
         else:
             self._log_ffmpeg_failure(ffmpeg_run_result, temporary_video_path)
+            raise RuntimeError(VIDEO_METADATA_FAILED)
 
         return self.file_path
 

@@ -3,13 +3,20 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from src.config import Config
 from src.logger import log
 from src.overlay.overlay_stage import OverlayStage
+from src.pipeline.failure_store import FailureStore
 from src.pipeline.stage_concurrency import StageConcurrency
 from src.scanner import FolderScanner, MediaPair
+from src.ui import StatsManager
 
 
 class OverlayPhase:
-    def __init__(self, stage_concurrency: StageConcurrency) -> None:
+    def __init__(
+        self,
+        stage_concurrency: StageConcurrency,
+        failure_store: FailureStore,
+    ) -> None:
         self.stage_concurrency = stage_concurrency
+        self.failure_store = failure_store
 
     def run(self) -> None:
         if Config.cli_options["overlay_mode"] == "off":
@@ -48,6 +55,8 @@ class OverlayPhase:
             try:
                 future.result()
             except Exception as error:
+                StatsManager.failed_count += 1
+                self.failure_store.move_files([pair.main_path, pair.overlay_path])
                 log(
                     f"Overlay stage failed for '{pair.media_id}': {error}",
                     "error",
@@ -62,8 +71,7 @@ class OverlayPhase:
 
     def _apply_overlay(self, pair: MediaPair) -> None:
         if not pair.main_path.exists():
-            log(f"No usable main file for '{pair.media_id}'", "error", "PAIR")
-            return
+            raise FileNotFoundError(pair.main_path)
 
         with self.stage_concurrency.overlay_applier_slot():
             OverlayStage(pair).run()
