@@ -52,4 +52,4 @@ class Config:
 
     @classmethod
     def _get_failures_folder(cls) -> Path:
-        return Path("src/failures")
+        return cls.memories_folder / ".failures"
