@@ -21,7 +21,6 @@ def _fail_fast_checks() -> bool:
 if __name__ == "__main__":
     Config.initialize_config()
     LogInitializer().configure_logger()
-
     StatsManager.new_run()
 
     log("Application started", "info")

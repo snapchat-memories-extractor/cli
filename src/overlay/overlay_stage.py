@@ -17,10 +17,10 @@ class OverlayStage:
     def purge_overlays() -> None:
         deleted = 0
         for overlay_path in Config.memories_folder.rglob("*"):
-            if not overlay_path.is_file() or not overlay_path.stem.endswith("-overlay"):
-                continue
-            overlay_path.unlink()
-            deleted += 1
+            # Sanity check: users may add folders even though exports normally do not.
+            if overlay_path.is_file() and overlay_path.stem.endswith("-overlay"):
+                overlay_path.unlink()
+                deleted += 1
 
         if deleted:
             log(
