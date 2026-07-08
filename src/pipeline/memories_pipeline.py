@@ -135,7 +135,7 @@ class MemoriesPipeline:
     ) -> Path | None:
         try:
             overlay_stage = OverlayStage(pair)
-            if pair.overlay_path and Config.cli_options["overlay_mode"] != "off":
+            if pair.overlay_path:
                 with stage_concurrency.overlay_applier_slot():
                     file_path = overlay_stage.run()
             else:

@@ -16,7 +16,9 @@ class OverlayStage:
     @staticmethod
     def purge_overlays() -> None:
         deleted = 0
-        for overlay_path in Config.memories_folder.rglob("*-overlay.*"):
+        for overlay_path in Config.memories_folder.rglob("*"):
+            if not overlay_path.is_file() or not overlay_path.stem.endswith("-overlay"):
+                continue
             overlay_path.unlink()
             deleted += 1
 
@@ -30,16 +32,9 @@ class OverlayStage:
     def run(self) -> Path | None:
         mode = Config.cli_options["overlay_mode"]
 
-        if mode == "off":
-            return self._run_off()
         if mode == "both":
             return self._run_both()
         return self._run_on()
-
-    def _run_off(self) -> Path:
-        if self.pair.overlay_path and self.pair.overlay_path.exists():
-            self.pair.overlay_path.unlink()
-        return self.pair.main_path
 
     def _run_on(self) -> Path:
         if not self.pair.overlay_path:
