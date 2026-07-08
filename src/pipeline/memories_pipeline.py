@@ -104,7 +104,7 @@ class MemoriesPipeline:
     ) -> PairResult:
         result = PairResult(media_id=pair.media_id)
 
-        if pair.main_path is None or not pair.main_path.exists():
+        if not pair.main_path.exists():
             log(f"No usable main file for '{pair.media_id}'", "error", "PAIR")
             result.failed = True
             return result
@@ -138,17 +138,14 @@ class MemoriesPipeline:
     ) -> Path | None:
         try:
             overlay_stage = OverlayStage(pair)
-            if pair.overlay_path:
-                with stage_concurrency.overlay_applier_slot():
-                    file_path = overlay_stage.run()
-            else:
+            with stage_concurrency.overlay_applier_slot():
                 file_path = overlay_stage.run()
         except Exception as error:
             log(f"Overlay stage failed for '{pair.media_id}': {error}", "error", "OVR")
             result.failed = True
             return None
 
-        result.overlay_applied = pair.overlay_path is not None
+        result.overlay_applied = True
         return file_path
 
     @staticmethod

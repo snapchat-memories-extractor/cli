@@ -8,8 +8,8 @@ class MediaPair:
     def __init__(
         self,
         media_id: str,
-        main_path: Path | None = None,
-        overlay_path: Path | None = None,
+        main_path: Path,
+        overlay_path: Path,
     ) -> None:
         self.media_id = media_id
         self.main_path = main_path
@@ -30,20 +30,21 @@ class FolderScanner:
     def _group_by_id(self, files: list[Path]) -> dict[str, dict[str, Path]]:
         grouped: dict[str, dict[str, Path]] = defaultdict(dict)
         for file_path in files:
-            media_id, role = self._parse_filename(file_path)
-            if media_id is None:
+            parsed = self._parse_filename(file_path)
+            if parsed is None:
                 continue
+            media_id, role = parsed
             grouped[media_id][role] = file_path
         return grouped
 
     @staticmethod
-    def _parse_filename(file_path: Path) -> tuple[str | None, str | None]:
+    def _parse_filename(file_path: Path) -> tuple[str, str] | None:
         stem = file_path.stem
         if stem.endswith("-main"):
             return stem[: -len("-main")], "main"
         if stem.endswith("-overlay"):
             return stem[: -len("-overlay")], "overlay"
-        return None, None
+        return None
 
     @staticmethod
     def _build_pairs(grouped: dict[str, dict[str, Path]]) -> list[MediaPair]:
@@ -53,13 +54,12 @@ class FolderScanner:
             main_path = roles.get("main")
             overlay_path = roles.get("overlay")
 
-            if overlay_path and not main_path:
+            if main_path and overlay_path:
+                pairs.append(MediaPair(media_id, main_path, overlay_path))
+            elif overlay_path:
                 log(
                     f"Found overlay file with no matching main for id "
                     f"'{media_id}': {overlay_path}. Skipping.",
                     "warning",
                 )
-                continue
-
-            pairs.append(MediaPair(media_id, main_path, overlay_path))
         return pairs
