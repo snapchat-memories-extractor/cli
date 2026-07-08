@@ -7,9 +7,9 @@ from src.logger import log
 from src.matcher import ExifDatetimeReader, LocationMatcher
 from src.media_dispatcher import process_media
 from src.memories import MemoriesRepository, Memory
-from src.overlay import OverlayStage
+from src.overlay import OverlayPhase
 from src.pipeline.stage_concurrency import StageConcurrency
-from src.scanner import FolderScanner, MediaPair
+from src.scanner import FolderScanner
 from src.ui import StatsManager, UpdateUI
 
 
@@ -25,65 +25,66 @@ class PairResult:
 
 class MemoriesPipeline:
     def run(self) -> None:
-        if Config.cli_options["overlay_mode"] == "off":
-            OverlayStage.purge_overlays()
+        stage_concurrency = StageConcurrency.from_options(Config.cli_options)
+        OverlayPhase(stage_concurrency).run()
 
-        pairs = FolderScanner(Config.memories_folder).scan_overlay_pairs()
+        media_files = FolderScanner(Config.memories_folder).scan_media_files()
+        StatsManager.total_files = len(media_files)
 
-        if not pairs:
-            log("No media pairs found to process.", "info")
+        if not media_files:
+            log("No media files found to process.", "info")
             return
 
         matcher = None
         if Config.cli_options["write_metadata"]:
             matcher = LocationMatcher(self._load_memories())
-        stage_concurrency = StageConcurrency.from_options(Config.cli_options)
-        StatsManager.total_files = len(pairs)
 
-        futures = self._submit_pairs(pairs, matcher, stage_concurrency)
+        futures = self._submit_media(
+            media_files,
+            matcher,
+            stage_concurrency,
+        )
 
         try:
             self._collect_results(futures)
         except KeyboardInterrupt:
             self._handle_keyboard_interrupt(futures)
-        finally:
-            OverlayStage.purge_overlays()
 
     @staticmethod
     def _load_memories() -> list[Memory]:
         raw_items = MemoriesRepository().get_raw_items()
         return [Memory.model_validate(item) for item in raw_items]
 
-    def _submit_pairs(
+    def _submit_media(
         self,
-        pairs: list[MediaPair],
+        media_files: list[Path],
         matcher: LocationMatcher | None,
         stage_concurrency: StageConcurrency,
-    ) -> dict[Future, MediaPair]:
+    ) -> dict[Future, Path]:
         max_workers = stage_concurrency.pair_worker_capacity(Config.cli_options)
         executor = ThreadPoolExecutor(max_workers=max_workers)
 
         futures = {}
-        for pair in pairs:
+        for file_path in media_files:
             future = executor.submit(
-                self._process_pair,
-                pair,
+                self._process_media,
+                file_path,
                 matcher,
                 stage_concurrency,
             )
-            futures[future] = pair
+            futures[future] = file_path
 
         return futures
 
-    def _collect_results(self, futures: dict[Future, MediaPair]) -> None:
+    def _collect_results(self, futures: dict[Future, Path]) -> None:
         for future in as_completed(futures):
-            pair = futures[future]
+            file_path = futures[future]
             try:
                 result = future.result()
             except Exception as error:
-                result = PairResult(media_id=pair.media_id, failed=True)
+                result = PairResult(media_id=file_path.stem, failed=True)
                 log(
-                    f"Unexpected failure processing '{pair.media_id}': {error}",
+                    f"Unexpected failure processing '{file_path}': {error}",
                     "error",
                     "ERR",
                 )
@@ -91,64 +92,41 @@ class MemoriesPipeline:
             self._update_stats(result)
             UpdateUI().run()
 
-    def _handle_keyboard_interrupt(self, futures: dict[Future, MediaPair]) -> None:
+    def _handle_keyboard_interrupt(self, futures: dict[Future, Path]) -> None:
         log("KeyboardInterrupt received. Finishing in-flight pairs...", "info")
         UpdateUI().run("interrupted")
         unfinished = {f: futures[f] for f in futures if not f.done()}
         self._collect_results(unfinished)
         log("All in-flight pairs finished. Exiting.", "info")
 
-    def _process_pair(
+    def _process_media(
         self,
-        pair: MediaPair,
+        file_path: Path,
         matcher: LocationMatcher | None,
         stage_concurrency: StageConcurrency,
     ) -> PairResult:
-        result = PairResult(media_id=pair.media_id)
-
-        if not pair.main_path.exists():
-            log(f"No usable main file for '{pair.media_id}'", "error", "PAIR")
-            result.failed = True
-            return result
-
-        file_path = self._run_overlay_stage(pair, result, stage_concurrency)
-        if file_path is None:
-            return result
+        media_id = file_path.stem
+        result = PairResult(media_id=media_id)
 
         memory = None
         if Config.cli_options["write_metadata"]:
             assert matcher is not None
             captured_at = ExifDatetimeReader(file_path).run()
-            memory = matcher.match_one(pair.media_id, captured_at)
+            memory = matcher.match_one(media_id, captured_at)
             result.matched = memory is not None
 
             if memory is None and Config.cli_options["strict_location"]:
                 file_path.unlink(missing_ok=True)
                 result.deleted_unmatched = True
-                log(f"Deleted unmatched file for '{pair.media_id}' (--strict)", "info")
+                log(
+                    f"Deleted unmatched file for '{media_id}' (--strict)",
+                    "info",
+                )
                 return result
 
         process_media(memory, file_path, stage_concurrency)
         result.processed = True
         return result
-
-    @staticmethod
-    def _run_overlay_stage(
-        pair: MediaPair,
-        result: PairResult,
-        stage_concurrency: StageConcurrency,
-    ) -> Path | None:
-        try:
-            overlay_stage = OverlayStage(pair)
-            with stage_concurrency.overlay_applier_slot():
-                file_path = overlay_stage.run()
-        except Exception as error:
-            log(f"Overlay stage failed for '{pair.media_id}': {error}", "error", "OVR")
-            result.failed = True
-            return None
-
-        result.overlay_applied = True
-        return file_path
 
     @staticmethod
     def _update_stats(result: PairResult) -> None:
