@@ -7,7 +7,7 @@ from src.ui import StatsManager, UpdateUI
 def _fail_fast_checks() -> bool:
     all_paths_ok = True
 
-    if not Config.json_path.exists():
+    if Config.cli_options["write_metadata"] and not Config.json_path.exists():
         log(f"Missing memories JSON file at {Config.json_path}", "error", "MISS")
         all_paths_ok = False
 

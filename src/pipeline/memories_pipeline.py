@@ -6,7 +6,7 @@ from src.config import Config
 from src.logger import log
 from src.matcher import ExifDatetimeReader, LocationMatcher
 from src.media_dispatcher import process_media
-from src.memories import Memory, MemoriesRepository
+from src.memories import MemoriesRepository, Memory
 from src.overlay import OverlayStage
 from src.pipeline.stage_concurrency import StageConcurrency
 from src.scanner import FolderScanner, MediaPair
@@ -34,7 +34,9 @@ class MemoriesPipeline:
             log("No media pairs found to process.", "info")
             return
 
-        matcher = LocationMatcher(self._load_memories())
+        matcher = None
+        if Config.cli_options["write_metadata"]:
+            matcher = LocationMatcher(self._load_memories())
         stage_concurrency = StageConcurrency.from_options(Config.cli_options)
         StatsManager.total_files = len(pairs)
 
@@ -53,7 +55,7 @@ class MemoriesPipeline:
     def _submit_pairs(
         self,
         pairs: list[MediaPair],
-        matcher: LocationMatcher,
+        matcher: LocationMatcher | None,
         stage_concurrency: StageConcurrency,
     ) -> dict[Future, MediaPair]:
         max_workers = stage_concurrency.pair_worker_capacity(Config.cli_options)
@@ -97,7 +99,7 @@ class MemoriesPipeline:
     def _process_pair(
         self,
         pair: MediaPair,
-        matcher: LocationMatcher,
+        matcher: LocationMatcher | None,
         stage_concurrency: StageConcurrency,
     ) -> PairResult:
         result = PairResult(media_id=pair.media_id)
@@ -113,6 +115,7 @@ class MemoriesPipeline:
 
         memory = None
         if Config.cli_options["write_metadata"]:
+            assert matcher is not None
             captured_at = ExifDatetimeReader(file_path).run()
             memory = matcher.match_one(pair.media_id, captured_at)
             result.matched = memory is not None

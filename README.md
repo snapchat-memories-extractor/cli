@@ -130,6 +130,8 @@ python main.py --memories-json /path/to/memories_history.json --memories-folder 
 - Specifies the path to the `memories_history.json` file exported from Snapchat
 - **Default**: `data/memories_history.json` (relative to the project root)
 - If you placed the file in the `/data` folder, you don't need this flag at all
+- Only required when metadata writing is enabled. With `--no-metadata`, the JSON
+  file is not read.
 
 **Examples**:
 
@@ -356,6 +358,7 @@ python main.py --strict
 **What it does:**
 - **By default**, this tool embeds GPS location metadata into every photo and video that has GPS data available
 - Use `--no-metadata` if you want to skip writing metadata entirely
+- With `--no-metadata`, `memories_history.json` is not required or read
 - Files with no GPS data available will never get metadata regardless of this flag, as there's nothing to write
 
 **Examples**:
@@ -1039,8 +1042,8 @@ When exporting your data from Snapchat, make sure you select **both** options:
 - **Export JSON Files**
 
 Without both, either the JSON file or the actual media files won't be
-included in your export, and the tool will fail its startup check for
-whichever one is missing.
+included in your export. The memories folder is always required; the JSON
+file is required only when metadata writing is enabled.
 
 </details>
 
