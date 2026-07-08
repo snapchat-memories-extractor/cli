@@ -20,12 +20,12 @@ class FolderScanner:
     def __init__(self, folder: Path) -> None:
         self.folder = folder
 
-    def run(self) -> list[MediaPair]:
-        grouped = self._group_by_id(self._scan_files())
+    def scan_overlay_pairs(self) -> list[MediaPair]:
+        grouped = self._group_by_id(self.scan_media_files())
         return self._build_pairs(grouped)
 
-    def _scan_files(self) -> list[Path]:
-        return sorted(p for p in self.folder.rglob("*") if p.is_file())
+    def scan_media_files(self) -> list[Path]:
+        return sorted(path for path in self.folder.rglob("*") if path.is_file())
 
     def _group_by_id(self, files: list[Path]) -> dict[str, dict[str, Path]]:
         grouped: dict[str, dict[str, Path]] = defaultdict(dict)

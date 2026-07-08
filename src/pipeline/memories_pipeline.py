@@ -28,7 +28,7 @@ class MemoriesPipeline:
         if Config.cli_options["overlay_mode"] == "off":
             OverlayStage.purge_overlays()
 
-        pairs = FolderScanner(Config.memories_folder).run()
+        pairs = FolderScanner(Config.memories_folder).scan_overlay_pairs()
 
         if not pairs:
             log("No media pairs found to process.", "info")
