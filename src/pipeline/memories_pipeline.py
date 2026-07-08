@@ -46,6 +46,8 @@ class MemoriesPipeline:
             self._collect_results(futures)
         except KeyboardInterrupt:
             self._handle_keyboard_interrupt(futures)
+        finally:
+            OverlayStage.purge_overlays()
 
     @staticmethod
     def _load_memories() -> list[Memory]:

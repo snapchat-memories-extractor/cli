@@ -24,8 +24,7 @@ class OverlayStage:
 
         if deleted:
             log(
-                f"--overlay-mode=off: deleted {deleted} overlay file(s) "
-                "immediately, before processing started.",
+                f"Deleted {deleted} overlay file(s).",
                 "info",
             )
 
@@ -82,9 +81,17 @@ class OverlayStage:
 
     def _composite(self, output_path: Path) -> None:
         if self.pair.main_path.suffix.lower() in VIDEO_SUFFIXES:
-            VideoComposer(self.pair.main_path, self.pair.overlay_path, output_path).apply_overlay()
+            VideoComposer(
+                self.pair.main_path,
+                self.pair.overlay_path,
+                output_path,
+            ).apply_overlay()
         else:
-            ImageComposer(self.pair.main_path, self.pair.overlay_path, output_path).apply_overlay()
+            ImageComposer(
+                self.pair.main_path,
+                self.pair.overlay_path,
+                output_path,
+            ).apply_overlay()
 
     @staticmethod
     def _is_valid_output(path: Path) -> bool:
