@@ -9,14 +9,11 @@ from src.memories import Memory
 
 
 class VideoMetadataWriter:
-    def __init__(self, memory: Memory | None, file_path: Path) -> None:
+    def __init__(self, memory: Memory, file_path: Path) -> None:
         self.memory = memory
         self.file_path = file_path
 
     def write_video_metadata(self) -> Path:
-        if self.memory is None:
-            return self.file_path
-
         temporary_video_path = self.file_path.with_suffix(".tmp.mp4")
         command = self._build_ffmpeg_command(temporary_video_path)
 
