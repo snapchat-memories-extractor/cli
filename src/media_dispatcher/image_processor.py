@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from src.config import Config
-from src.converters import JXLConverter
+from src.conversion import JXLConverter
 from src.memories import Memory
 from src.metadata import ImageMetadataWriter
 
