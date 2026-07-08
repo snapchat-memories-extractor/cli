@@ -3,7 +3,7 @@ from pathlib import Path
 
 from imageio_ffmpeg import get_ffmpeg_exe
 
-from src.config import FFmpegConfig, Config
+from src.config import Config, FFmpegConfig
 from src.logger import log
 
 
@@ -37,6 +37,8 @@ class VideoConverter:
             "-y",
             "-i",
             str(self.file_path),
+            "-map_metadata",
+            "0",
             "-c:a",
             "copy",
             "-c:v",
