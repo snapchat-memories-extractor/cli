@@ -29,7 +29,7 @@ class OverlayStage:
                 "info",
             )
 
-    def run(self) -> Path | None:
+    def run(self) -> Path:
         mode = Config.cli_options["overlay_mode"]
 
         if mode == "both":
@@ -37,9 +37,6 @@ class OverlayStage:
         return self._run_on()
 
     def _run_on(self) -> Path:
-        if not self.pair.overlay_path:
-            return self.pair.main_path
-
         output_path = self.pair.main_path
         temp_output = output_path.with_name(
             f"{output_path.stem}.compositing{output_path.suffix}"
@@ -58,9 +55,6 @@ class OverlayStage:
         return output_path
 
     def _run_both(self) -> Path:
-        if not self.pair.overlay_path:
-            return self.pair.main_path
-
         self._warn_both_av1()
 
         overlaid_path = self.pair.main_path.with_name(
@@ -102,7 +96,7 @@ class OverlayStage:
         attempted_path.unlink(missing_ok=True)
         log(
             f"Overlay compositing produced no usable output for "
-            f"'{self.pair.media_id}'. Sources left untouched.",
+            f"'{self.pair.media_id}'. Source files were not deleted.",
             "error",
             "OVR",
         )
