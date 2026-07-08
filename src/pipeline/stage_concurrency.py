@@ -3,6 +3,8 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from threading import BoundedSemaphore
 
+INVALID_STAGE_CONCURRENCY = "Stage concurrency must be at least 1"
+
 
 @dataclass
 class StageLimiter:
@@ -11,7 +13,7 @@ class StageLimiter:
 
     def __post_init__(self) -> None:
         if self.max_workers < 1:
-            raise ValueError("Stage concurrency must be at least 1")
+            raise ValueError(INVALID_STAGE_CONCURRENCY)
         self._semaphore = BoundedSemaphore(self.max_workers)
 
     @contextmanager
@@ -39,12 +41,8 @@ class StageConcurrency:
             av1_converter=StageLimiter(options["av1_converter_concurrency"]),
         )
 
-    def pair_worker_capacity(self, options: dict) -> int:
+    def conversion_worker_capacity(self, options: dict) -> int:
         active_limits = []
-        if options["overlay_mode"] != "off":
-            active_limits.append(self.overlay_applier.max_workers)
-        if options["write_metadata"]:
-            active_limits.append(self.gps_writer.max_workers)
         if options["convert_to_jxl"]:
             active_limits.append(self.jxl_converter.max_workers)
         if options["video_codec"] == "av1":

@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from src.config import Config
-from src.conversion import VideoConverter
+from src.conversion.ffmpeg_converter import VideoConverter
 
 if TYPE_CHECKING:
     from src.pipeline.stage_concurrency import StageConcurrency

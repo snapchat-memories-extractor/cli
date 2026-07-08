@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from src.config import Config
-from src.conversion import JXLConverter
+from src.conversion.jxl_converter import JXLConverter
 
 if TYPE_CHECKING:
     from src.pipeline.stage_concurrency import StageConcurrency
