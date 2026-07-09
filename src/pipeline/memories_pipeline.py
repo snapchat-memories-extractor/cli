@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from src.config import Config
 from src.conversion import ConversionPhase
 from src.logger import log
@@ -27,11 +25,11 @@ class MemoriesPipeline:
                 log("No media files found to process.", "info")
                 return
 
-            metadata_failed_files = MetadataPhase(
+            MetadataPhase(
                 stage_concurrency,
                 failure_store,
             ).run(media_files)
-            media_files = self._scan_processable_files(metadata_failed_files)
+            media_files = FolderScanner(Config.memories_folder).scan_media_files()
             StatsManager.set_total_files(len(media_files))
 
             if not media_files:
@@ -41,7 +39,3 @@ class MemoriesPipeline:
             ConversionPhase(stage_concurrency, failure_store).run(media_files)
         finally:
             failure_store.restore_all()
-
-    def _scan_processable_files(self, failed_files: set[Path]) -> list[Path]:
-        media_files = FolderScanner(Config.memories_folder).scan_media_files()
-        return [file_path for file_path in media_files if file_path not in failed_files]

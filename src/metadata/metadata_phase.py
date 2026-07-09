@@ -23,17 +23,17 @@ class MetadataPhase:
         self.stage_concurrency = stage_concurrency
         self.failure_store = failure_store
 
-    def run(self, media_files: list[Path]) -> set[Path]:
+    def run(self, media_files: list[Path]) -> None:
         if not Config.cli_options["write_metadata"]:
-            return set()
+            return
 
         matcher = LocationMatcher(self._load_memories())
         futures = self._submit_media(media_files, matcher)
 
         try:
-            return self._collect_results(futures)
+            self._collect_results(futures)
         except KeyboardInterrupt:
-            return self._handle_keyboard_interrupt(futures)
+            self._handle_keyboard_interrupt(futures)
 
     @staticmethod
     def _load_memories() -> list[Memory]:
@@ -56,14 +56,12 @@ class MetadataPhase:
 
         return futures
 
-    def _collect_results(self, futures: dict[Future, Path]) -> set[Path]:
-        failed_files = set()
+    def _collect_results(self, futures: dict[Future, Path]) -> None:
         for future in as_completed(futures):
             file_path = futures[future]
             try:
                 result = future.result()
             except Exception as error:
-                failed_files.add(file_path)
                 StatsManager.record_failed()
                 self.failure_store.move_file(file_path)
                 log(
@@ -74,17 +72,14 @@ class MetadataPhase:
             else:
                 self._update_stats(result)
 
-        return failed_files
-
-    def _handle_keyboard_interrupt(self, futures: dict[Future, Path]) -> set[Path]:
+    def _handle_keyboard_interrupt(self, futures: dict[Future, Path]) -> None:
         log(
             "KeyboardInterrupt received. Finishing in-flight metadata writes...",
             "info",
         )
         unfinished = {f: futures[f] for f in futures if not f.done()}
-        failed_files = self._collect_results(unfinished)
+        self._collect_results(unfinished)
         log("All in-flight metadata writes finished.", "info")
-        return failed_files
 
     def _apply_metadata(
         self,
