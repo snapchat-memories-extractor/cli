@@ -2,11 +2,14 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from src.config import Config
+from src.conversion.ffmpeg_converter import VideoConverter
+from src.conversion.jxl_converter import JXLConverter
 from src.logger import log
-from src.media_dispatcher import process_media
 from src.pipeline.failure_store import FailureStore
 from src.pipeline.stage_concurrency import StageConcurrency
 from src.ui import StatsManager, UpdateUI
+
+IMAGE_SUFFIXES = {".jpg", ".jpeg"}
 
 
 class ConversionPhase:
@@ -64,4 +67,18 @@ class ConversionPhase:
         log("All in-flight conversions finished. Exiting.", "info")
 
     def _process_media(self, file_path: Path) -> None:
-        process_media(file_path, self.stage_concurrency)
+        if file_path.suffix.lower() in IMAGE_SUFFIXES:
+            self._process_image(file_path)
+            return
+
+        self._process_video(file_path)
+
+    def _process_image(self, file_path: Path) -> None:
+        if Config.cli_options["convert_to_jxl"]:
+            with self.stage_concurrency.jxl_converter_slot():
+                JXLConverter(file_path).run()
+
+    def _process_video(self, file_path: Path) -> None:
+        if Config.cli_options["video_codec"] == "av1":
+            with self.stage_concurrency.av1_converter_slot():
+                VideoConverter(file_path).run()

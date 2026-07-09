@@ -5,13 +5,14 @@ from pathlib import Path
 from src.config import Config
 from src.logger import log
 from src.matcher import ExifDatetimeReader, LocationMatcher
-from src.media_dispatcher.media_dispatcher import IMAGE_SUFFIXES
 from src.memories import MemoriesRepository, Memory
 from src.metadata.image_metadata_writer import ImageMetadataWriter
 from src.metadata.video_metadata_writer import VideoMetadataWriter
 from src.pipeline.failure_store import FailureStore
 from src.pipeline.stage_concurrency import StageConcurrency
 from src.ui import StatsManager
+
+IMAGE_SUFFIXES = {".jpg", ".jpeg"}
 
 
 @dataclass(frozen=True)
