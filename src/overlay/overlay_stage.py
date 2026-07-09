@@ -2,11 +2,11 @@ from pathlib import Path
 
 from src.config import Config
 from src.logger import log
+from src.media_types import is_video
 from src.overlay.image_composer import ImageComposer
 from src.overlay.video_composer import VideoComposer
 from src.scanner import MediaPair
 
-VIDEO_SUFFIXES = {".mp4"}
 OVERLAY_OUTPUT_FAILED = "Overlay compositing produced no usable output"
 
 
@@ -75,7 +75,7 @@ class OverlayStage:
         return overlaid_path
 
     def _composite(self, output_path: Path) -> None:
-        if self.pair.main_path.suffix.lower() in VIDEO_SUFFIXES:
+        if is_video(self.pair.main_path):
             VideoComposer(
                 self.pair.main_path,
                 self.pair.overlay_path,
@@ -102,8 +102,7 @@ class OverlayStage:
         )
 
     def _warn_both_av1(self) -> None:
-        is_video = self.pair.main_path.suffix.lower() in VIDEO_SUFFIXES
-        if is_video and Config.cli_options["video_codec"] == "av1":
+        if is_video(self.pair.main_path) and Config.cli_options["video_codec"] == "av1":
             log(
                 f"--overlay-mode=both with --video-codec=av1 for "
                 f"'{self.pair.media_id}' means encoding this file twice "

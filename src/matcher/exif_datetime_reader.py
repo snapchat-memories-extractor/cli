@@ -5,8 +5,7 @@ from pathlib import Path
 import piexif
 
 from src.logger import log
-
-IMAGE_SUFFIXES = {".jpg", ".jpeg"}
+from src.media_types import is_image
 
 
 class ExifDatetimeReader:
@@ -14,7 +13,7 @@ class ExifDatetimeReader:
         self.file_path = file_path
 
     def run(self) -> datetime | None:
-        if self.file_path.suffix.lower() in IMAGE_SUFFIXES:
+        if is_image(self.file_path):
             return self._read_image_datetime()
         return self._read_video_datetime()
 
@@ -28,7 +27,9 @@ class ExifDatetimeReader:
         if not raw_value:
             return None
 
-        decoded = raw_value.decode("utf-8") if isinstance(raw_value, bytes) else raw_value
+        decoded = (
+            raw_value.decode("utf-8") if isinstance(raw_value, bytes) else raw_value
+        )
         try:
             return datetime.strptime(decoded, "%Y:%m:%d %H:%M:%S").replace(
                 tzinfo=timezone.utc

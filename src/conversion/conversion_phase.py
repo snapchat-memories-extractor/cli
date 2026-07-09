@@ -5,11 +5,10 @@ from src.config import Config
 from src.conversion.ffmpeg_converter import VideoConverter
 from src.conversion.jxl_converter import JXLConverter
 from src.logger import log
+from src.media_types import is_image
 from src.pipeline.failure_store import FailureStore
 from src.pipeline.stage_concurrency import StageConcurrency
 from src.ui import StatsManager, UpdateUI
-
-IMAGE_SUFFIXES = {".jpg", ".jpeg"}
 
 
 class ConversionPhase:
@@ -67,7 +66,7 @@ class ConversionPhase:
         log("All in-flight conversions finished. Exiting.", "info")
 
     def _process_media(self, file_path: Path) -> None:
-        if file_path.suffix.lower() in IMAGE_SUFFIXES:
+        if is_image(file_path):
             self._process_image(file_path)
             return
 

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from src.config import Config
 from src.logger import log
+from src.media_types import is_image
 
 CJXL_NOT_FOUND = "cjxl binary not found"
 JXL_CONVERSION_FAILED = "JXL conversion failed"
@@ -66,10 +67,7 @@ class JXLConverter:
         return cjxl_full_path
 
     def _is_convertible_image(self) -> bool:
-        return bool(
-            self.input_path.suffix.lower() in (".jpg", ".jpeg")
-            and self.input_path.exists()
-        )
+        return is_image(self.input_path) and self.input_path.exists()
 
     def _build_cjxl_command(
         self, cjxl_path: Path | str, output_path: Path
