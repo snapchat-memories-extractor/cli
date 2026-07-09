@@ -5,7 +5,7 @@ from imageio_ffmpeg import get_ffmpeg_exe
 
 from src.config import Config
 from src.logger import log
-from src.memories import Memory
+from src.metadata.memory_model import Memory
 
 VIDEO_METADATA_FAILED = "Video metadata write failed"
 

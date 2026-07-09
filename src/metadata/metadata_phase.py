@@ -6,9 +6,11 @@ from src.core.failure_store import FailureStore
 from src.core.stage_concurrency import StageConcurrency
 from src.helpers import is_image
 from src.logger import log
-from src.matcher import ExifDatetimeReader, LocationMatcher
-from src.memories import MemoriesRepository, Memory
+from src.metadata.exif_datetime_reader import ExifDatetimeReader
 from src.metadata.image_metadata_writer import ImageMetadataWriter
+from src.metadata.location_matcher import LocationMatcher
+from src.metadata.memories_repository import MemoriesRepository
+from src.metadata.memory_model import Memory
 from src.metadata.video_metadata_writer import VideoMetadataWriter
 from src.ui import StatsManager
 

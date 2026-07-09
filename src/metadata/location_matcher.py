@@ -2,7 +2,7 @@ import threading
 from datetime import datetime, timezone
 
 from src.logger import log
-from src.memories import Memory
+from src.metadata.memory_model import Memory
 
 
 class LocationMatcher:

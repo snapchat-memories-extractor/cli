@@ -2,8 +2,8 @@ from pathlib import Path
 
 import piexif
 
-from src.memories import Memory
 from src.metadata.image_saver import save_image
+from src.metadata.memory_model import Memory
 
 
 class ImageMetadataWriter:
