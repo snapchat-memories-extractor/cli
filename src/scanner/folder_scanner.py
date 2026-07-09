@@ -1,19 +1,15 @@
 from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 
 from src.logger import log
 
 
+@dataclass(frozen=True)
 class MediaPair:
-    def __init__(
-        self,
-        media_id: str,
-        main_path: Path,
-        overlay_path: Path,
-    ) -> None:
-        self.media_id = media_id
-        self.main_path = main_path
-        self.overlay_path = overlay_path
+    media_id: str
+    main_path: Path
+    overlay_path: Path
 
 
 class FolderScanner:
