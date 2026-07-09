@@ -21,7 +21,7 @@ class MemoriesPipeline:
             OverlayPhase(stage_concurrency, failure_store).run()
 
             media_files = FolderScanner(Config.memories_folder).scan_media_files()
-            StatsManager.total_files = len(media_files)
+            StatsManager.set_total_files(len(media_files))
 
             if not media_files:
                 log("No media files found to process.", "info")
@@ -32,7 +32,7 @@ class MemoriesPipeline:
                 failure_store,
             ).run(media_files)
             media_files = self._scan_processable_files(metadata_failed_files)
-            StatsManager.total_files = len(media_files)
+            StatsManager.set_total_files(len(media_files))
 
             if not media_files:
                 log("No media files left to convert.", "info")

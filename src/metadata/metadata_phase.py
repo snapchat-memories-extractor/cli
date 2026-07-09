@@ -17,7 +17,6 @@ from src.ui import StatsManager
 @dataclass(frozen=True)
 class MetadataResult:
     matched: bool = False
-    deleted_unmatched: bool = False
 
 
 class MetadataPhase:
@@ -70,7 +69,7 @@ class MetadataPhase:
                 result = future.result()
             except Exception as error:
                 failed_files.add(file_path)
-                StatsManager.failed_count += 1
+                StatsManager.record_failed()
                 self.failure_store.move_file(file_path)
                 log(
                     f"Metadata stage failed for '{file_path}': {error}",
@@ -104,7 +103,7 @@ class MetadataPhase:
             if Config.cli_options["strict_location"]:
                 file_path.unlink(missing_ok=True)
                 log(f"Deleted unmatched file for '{file_path.stem}' (--strict)", "info")
-                return MetadataResult(deleted_unmatched=True)
+                return MetadataResult()
             return MetadataResult()
 
         with self.stage_concurrency.gps_writer_slot():
@@ -122,9 +121,6 @@ class MetadataPhase:
     @staticmethod
     def _update_stats(result: MetadataResult) -> None:
         if result.matched:
-            StatsManager.matched_count += 1
+            StatsManager.record_matched()
         else:
-            StatsManager.unmatched_count += 1
-
-        if result.deleted_unmatched:
-            StatsManager.deleted_unmatched_count += 1
+            StatsManager.record_unmatched()

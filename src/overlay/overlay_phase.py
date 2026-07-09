@@ -55,7 +55,7 @@ class OverlayPhase:
             try:
                 future.result()
             except Exception as error:
-                StatsManager.failed_count += 1
+                StatsManager.record_failed()
                 self.failure_store.move_files([pair.main_path, pair.overlay_path])
                 log(
                     f"Overlay stage failed for '{pair.media_id}': {error}",

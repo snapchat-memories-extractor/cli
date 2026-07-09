@@ -18,7 +18,6 @@ class Display:
         self.failed = StatsManager.failed_count
         self.matched = StatsManager.matched_count
         self.unmatched = StatsManager.unmatched_count
-        self.overlay_applied = StatsManager.overlay_applied_count
         self.elapsed_time = int(time() - StatsManager.start_time)
         self.eta = self._calculate_eta(current, self.elapsed_time, self.remaining)
 

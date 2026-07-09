@@ -45,7 +45,7 @@ class ConversionPhase:
             try:
                 future.result()
             except Exception as error:
-                StatsManager.failed_count += 1
+                StatsManager.record_failed()
                 self.failure_store.move_file(file_path)
                 log(
                     f"Unexpected failure processing '{file_path}': {error}",
@@ -53,7 +53,7 @@ class ConversionPhase:
                     "ERR",
                 )
 
-            StatsManager.processed_count += 1
+            StatsManager.record_processed()
             UpdateUI().run()
 
     def _handle_keyboard_interrupt(self, futures: dict[Future, Path]) -> None:
