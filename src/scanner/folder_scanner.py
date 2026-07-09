@@ -17,9 +17,8 @@ class MediaPair:
 
 
 class FolderScanner:
-    def __init__(self, folder: Path, ignored_folder: Path | None = None) -> None:
+    def __init__(self, folder: Path) -> None:
         self.folder = folder
-        self.ignored_folder = ignored_folder
 
     def scan_overlay_pairs(self) -> list[MediaPair]:
         grouped = self._group_by_id(self.scan_media_files())
@@ -28,15 +27,9 @@ class FolderScanner:
     def scan_media_files(self) -> list[Path]:
         return sorted(
             path
-            for path in self.folder.rglob("*")
-            if path.is_file() and not self._is_ignored(path)
+            for path in self.folder.iterdir()
+            if path.is_file()
         )
-
-    def _is_ignored(self, path: Path) -> bool:
-        if self.ignored_folder is None:
-            return False
-
-        return self.ignored_folder in path.parents
 
     def _group_by_id(self, files: list[Path]) -> dict[str, dict[str, Path]]:
         grouped: dict[str, dict[str, Path]] = defaultdict(dict)
