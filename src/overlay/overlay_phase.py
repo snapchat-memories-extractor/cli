@@ -1,10 +1,10 @@
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 
 from src.config import Config
+from src.core.failure_store import FailureStore
+from src.core.stage_concurrency import StageConcurrency
 from src.logger import log
 from src.overlay.overlay_stage import OverlayStage
-from src.pipeline.failure_store import FailureStore
-from src.pipeline.stage_concurrency import StageConcurrency
 from src.scanner import FolderScanner, MediaPair
 from src.ui import StatsManager
 

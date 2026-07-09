@@ -1,10 +1,10 @@
 from src.config import Config
-from src.conversion import ConversionPhase
+from src.conversion.conversion_phase import ConversionPhase
+from src.core.failure_store import FailureStore
+from src.core.stage_concurrency import StageConcurrency
 from src.logger import log
-from src.metadata import MetadataPhase
-from src.overlay import OverlayPhase
-from src.pipeline.failure_store import FailureStore
-from src.pipeline.stage_concurrency import StageConcurrency
+from src.metadata.metadata_phase import MetadataPhase
+from src.overlay.overlay_phase import OverlayPhase
 from src.scanner import FolderScanner
 from src.ui import StatsManager
 

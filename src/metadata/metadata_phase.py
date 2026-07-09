@@ -2,14 +2,14 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from src.config import Config
+from src.core.failure_store import FailureStore
+from src.core.stage_concurrency import StageConcurrency
 from src.logger import log
 from src.matcher import ExifDatetimeReader, LocationMatcher
 from src.media_types import is_image
 from src.memories import MemoriesRepository, Memory
 from src.metadata.image_metadata_writer import ImageMetadataWriter
 from src.metadata.video_metadata_writer import VideoMetadataWriter
-from src.pipeline.failure_store import FailureStore
-from src.pipeline.stage_concurrency import StageConcurrency
 from src.ui import StatsManager
 
 

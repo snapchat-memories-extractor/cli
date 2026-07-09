@@ -1,6 +1,6 @@
 from src.config import Config
 from src.logger import LogInitializer, log
-from src.pipeline import MemoriesPipeline
+from src.core.memories_pipeline import MemoriesPipeline
 from src.ui import StatsManager, UpdateUI
 
 

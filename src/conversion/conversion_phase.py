@@ -4,10 +4,10 @@ from pathlib import Path
 from src.config import Config
 from src.conversion.ffmpeg_converter import VideoConverter
 from src.conversion.jxl_converter import JXLConverter
+from src.core.failure_store import FailureStore
+from src.core.stage_concurrency import StageConcurrency
 from src.logger import log
 from src.media_types import is_image
-from src.pipeline.failure_store import FailureStore
-from src.pipeline.stage_concurrency import StageConcurrency
 from src.ui import StatsManager, UpdateUI
 
 
