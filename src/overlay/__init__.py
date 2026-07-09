@@ -1,11 +1,3 @@
-from src.overlay.image_composer import ImageComposer
 from src.overlay.overlay_phase import OverlayPhase
-from src.overlay.overlay_stage import OverlayStage
-from src.overlay.video_composer import VideoComposer
 
-__all__ = [
-    "ImageComposer",
-    "OverlayPhase",
-    "OverlayStage",
-    "VideoComposer",
-]
+__all__ = ["OverlayPhase"]
