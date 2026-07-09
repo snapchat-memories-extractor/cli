@@ -21,6 +21,8 @@ class OverlayPhase:
 
     def run(self) -> None:
         if Config.cli_options["overlay_mode"] == "off":
+            pairs = FolderScanner(Config.memories_folder).scan_overlay_pairs()
+            self._mark_pairs_skipped(pairs)
             self._mark_overlay_skipped_for_media()
             self._purge_non_failed_overlays()
             return
@@ -62,6 +64,11 @@ class OverlayPhase:
                 future.result()
             except Exception as error:
                 StatsManager.record_failed()
+                self.state_store.mark_failed(
+                    self._pair_state_key(pair),
+                    "overlay",
+                    str(error),
+                )
                 self.state_store.mark_failed(pair.main_path, "overlay", str(error))
                 self.state_store.mark_failed(pair.overlay_path, "overlay", str(error))
                 log(
@@ -80,15 +87,21 @@ class OverlayPhase:
         if not pair.main_path.exists():
             raise FileNotFoundError(pair.main_path)
 
+        self.state_store.mark_running(self._pair_state_key(pair), "overlay")
         self.state_store.mark_running(pair.main_path, "overlay")
         self.state_store.mark_running(pair.overlay_path, "overlay")
 
         with self.stage_concurrency.overlay_applier_slot():
             output_path = OverlayStage(pair).run()
 
+        self.state_store.mark_done(self._pair_state_key(pair), "overlay")
         self.state_store.mark_done(pair.main_path, "overlay")
         self.state_store.mark_done(pair.overlay_path, "overlay")
         self.state_store.mark_done(output_path, "overlay")
+
+    def _mark_pairs_skipped(self, pairs: list[MediaPair]) -> None:
+        for pair in pairs:
+            self.state_store.mark_skipped(self._pair_state_key(pair), "overlay")
 
     def _mark_overlay_skipped_for_media(self) -> None:
         media_files = FolderScanner(Config.memories_folder).scan_media_files()
@@ -125,3 +138,7 @@ class OverlayPhase:
         is_overlay = overlay_path.is_file() and overlay_path.stem.endswith("-overlay")
         failed = self.state_store.get_status(overlay_path, "overlay") == "failed"
         return is_overlay and not failed
+
+    @staticmethod
+    def _pair_state_key(pair: MediaPair) -> str:
+        return f"overlay-pair:{pair.media_id}"
