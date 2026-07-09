@@ -27,12 +27,15 @@ class MetadataPhase:
             return
 
         matcher = LocationMatcher(self._load_memories())
-        futures = self._submit_media(media_files, matcher)
+        with ThreadPoolExecutor(
+            max_workers=self.stage_concurrency.gps_writer.max_workers
+        ) as executor:
+            futures = self._submit_media(executor, media_files, matcher)
 
-        try:
-            self._collect_results(futures)
-        except KeyboardInterrupt:
-            self._handle_keyboard_interrupt(futures)
+            try:
+                self._collect_results(futures)
+            except KeyboardInterrupt:
+                self._handle_keyboard_interrupt(futures)
 
     @staticmethod
     def _load_memories() -> list[Memory]:
@@ -41,13 +44,10 @@ class MetadataPhase:
 
     def _submit_media(
         self,
+        executor: ThreadPoolExecutor,
         media_files: list[Path],
         matcher: LocationMatcher,
     ) -> dict[Future, Path]:
-        executor = ThreadPoolExecutor(
-            max_workers=self.stage_concurrency.gps_writer.max_workers
-        )
-
         futures = {}
         for file_path in media_files:
             future = executor.submit(self._apply_metadata, file_path, matcher)
