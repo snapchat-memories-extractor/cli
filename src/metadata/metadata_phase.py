@@ -2,7 +2,7 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from src.config import Config
-from src.core.failure_store import FailureStore
+from src.core.pipeline_state_store import PipelineStateStore
 from src.core.stage_concurrency import StageConcurrency
 from src.helpers import is_image
 from src.logger import log
@@ -19,13 +19,19 @@ class MetadataPhase:
     def __init__(
         self,
         stage_concurrency: StageConcurrency,
-        failure_store: FailureStore,
+        state_store: PipelineStateStore,
     ) -> None:
         self.stage_concurrency = stage_concurrency
-        self.failure_store = failure_store
+        self.state_store = state_store
 
     def run(self, media_files: list[Path]) -> None:
         if not Config.cli_options["write_metadata"]:
+            self._mark_metadata_skipped(media_files)
+            return
+
+        media_files = self._filter_blocked_media(media_files)
+        if not media_files:
+            log("No media files eligible for metadata.", "info")
             return
 
         matcher = LocationMatcher(self._load_memories())
@@ -64,7 +70,7 @@ class MetadataPhase:
                 result = future.result()
             except Exception as error:
                 StatsManager.record_failed()
-                self.failure_store.move_file(file_path)
+                self.state_store.mark_failed(file_path, "metadata", str(error))
                 log(
                     f"Metadata stage failed for '{file_path}': {error}",
                     "error",
@@ -87,6 +93,7 @@ class MetadataPhase:
         file_path: Path,
         matcher: LocationMatcher,
     ) -> bool:
+        self.state_store.mark_running(file_path, "metadata")
         captured_at = ExifDatetimeReader(file_path).run()
         memory = matcher.match_one(file_path.stem, captured_at)
 
@@ -94,13 +101,33 @@ class MetadataPhase:
             if Config.cli_options["strict_location"]:
                 file_path.unlink(missing_ok=True)
                 log(f"Deleted unmatched file for '{file_path.stem}' (--strict)", "info")
-                return False
+            self.state_store.mark_skipped(file_path, "metadata")
             return False
 
         with self.stage_concurrency.gps_writer_slot():
             self._write_metadata(memory, file_path)
 
+        self.state_store.mark_done(file_path, "metadata")
         return True
+
+    def _filter_blocked_media(self, media_files: list[Path]) -> list[Path]:
+        eligible = []
+        for file_path in media_files:
+            failed_stage = self.state_store.failed_stage(file_path, ("overlay",))
+            if failed_stage:
+                self.state_store.mark_skipped(file_path, "metadata")
+                log(
+                    f"Skipping metadata for '{file_path}' "
+                    f"because {failed_stage} failed.",
+                    "warning",
+                )
+            else:
+                eligible.append(file_path)
+        return eligible
+
+    def _mark_metadata_skipped(self, media_files: list[Path]) -> None:
+        for file_path in media_files:
+            self.state_store.mark_skipped(file_path, "metadata")
 
     @staticmethod
     def _write_metadata(memory: Memory, file_path: Path) -> None:

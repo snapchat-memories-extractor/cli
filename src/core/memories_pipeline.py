@@ -1,6 +1,6 @@
 from src.config import Config
 from src.conversion.conversion_phase import ConversionPhase
-from src.core.failure_store import FailureStore
+from src.core.pipeline_state_store import PipelineStateStore
 from src.core.stage_concurrency import StageConcurrency
 from src.helpers import FolderScanner
 from src.logger import log
@@ -12,30 +12,35 @@ from src.ui import StatsManager
 class MemoriesPipeline:
     def run(self) -> None:
         stage_concurrency = StageConcurrency.from_options(Config.cli_options)
-        failure_store = FailureStore()
-        failure_store.restore_all()
+        state_store = PipelineStateStore()
+        state_store.reset_running()
 
-        try:
-            OverlayPhase(stage_concurrency, failure_store).run()
+        OverlayPhase(stage_concurrency, state_store).run()
 
-            media_files = FolderScanner(Config.memories_folder).scan_media_files()
-            StatsManager.set_total_files(len(media_files))
+        media_files = FolderScanner(Config.memories_folder).scan_media_files()
+        StatsManager.set_total_files(len(media_files))
 
-            if not media_files:
-                log("No media files found to process.", "info")
-                return
+        if not media_files:
+            log("No media files found to process.", "info")
+            self._delete_state_if_successful(state_store)
+            return
 
-            MetadataPhase(
-                stage_concurrency,
-                failure_store,
-            ).run(media_files)
-            media_files = FolderScanner(Config.memories_folder).scan_media_files()
-            StatsManager.set_total_files(len(media_files))
+        MetadataPhase(
+            stage_concurrency,
+            state_store,
+        ).run(media_files)
+        media_files = FolderScanner(Config.memories_folder).scan_media_files()
+        StatsManager.set_total_files(len(media_files))
 
-            if not media_files:
-                log("No media files left to convert.", "info")
-                return
+        if not media_files:
+            log("No media files left to convert.", "info")
+            self._delete_state_if_successful(state_store)
+            return
 
-            ConversionPhase(stage_concurrency, failure_store).run(media_files)
-        finally:
-            failure_store.restore_all()
+        ConversionPhase(stage_concurrency, state_store).run(media_files)
+        self._delete_state_if_successful(state_store)
+
+    @staticmethod
+    def _delete_state_if_successful(state_store: PipelineStateStore) -> None:
+        if not state_store.has_failures():
+            state_store.delete()

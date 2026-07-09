@@ -1,7 +1,8 @@
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
+from pathlib import Path
 
 from src.config import Config
-from src.core.failure_store import FailureStore
+from src.core.pipeline_state_store import PipelineStateStore
 from src.core.stage_concurrency import StageConcurrency
 from src.helpers import FolderScanner, MediaPair
 from src.logger import log
@@ -13,21 +14,23 @@ class OverlayPhase:
     def __init__(
         self,
         stage_concurrency: StageConcurrency,
-        failure_store: FailureStore,
+        state_store: PipelineStateStore,
     ) -> None:
         self.stage_concurrency = stage_concurrency
-        self.failure_store = failure_store
+        self.state_store = state_store
 
     def run(self) -> None:
         if Config.cli_options["overlay_mode"] == "off":
-            OverlayStage.purge_overlays()
+            self._mark_overlay_skipped_for_media()
+            self._purge_non_failed_overlays()
             return
 
         pairs = FolderScanner(Config.memories_folder).scan_overlay_pairs()
+        self._mark_unpaired_media_skipped(pairs)
 
         if not pairs:
             log("No overlay pairs found to process.", "info")
-            OverlayStage.purge_overlays()
+            self._purge_non_failed_overlays()
             return
 
         with ThreadPoolExecutor(
@@ -40,7 +43,7 @@ class OverlayPhase:
             except KeyboardInterrupt:
                 self._handle_keyboard_interrupt(futures)
             finally:
-                OverlayStage.purge_overlays()
+                self._purge_non_failed_overlays()
 
     def _submit_pairs(
         self,
@@ -59,7 +62,8 @@ class OverlayPhase:
                 future.result()
             except Exception as error:
                 StatsManager.record_failed()
-                self.failure_store.move_files([pair.main_path, pair.overlay_path])
+                self.state_store.mark_failed(pair.main_path, "overlay", str(error))
+                self.state_store.mark_failed(pair.overlay_path, "overlay", str(error))
                 log(
                     f"Overlay stage failed for '{pair.media_id}': {error}",
                     "error",
@@ -76,5 +80,48 @@ class OverlayPhase:
         if not pair.main_path.exists():
             raise FileNotFoundError(pair.main_path)
 
+        self.state_store.mark_running(pair.main_path, "overlay")
+        self.state_store.mark_running(pair.overlay_path, "overlay")
+
         with self.stage_concurrency.overlay_applier_slot():
-            OverlayStage(pair).run()
+            output_path = OverlayStage(pair).run()
+
+        self.state_store.mark_done(pair.main_path, "overlay")
+        self.state_store.mark_done(pair.overlay_path, "overlay")
+        self.state_store.mark_done(output_path, "overlay")
+
+    def _mark_overlay_skipped_for_media(self) -> None:
+        media_files = FolderScanner(Config.memories_folder).scan_media_files()
+        for file_path in media_files:
+            self.state_store.mark_skipped(file_path, "overlay")
+
+    def _mark_unpaired_media_skipped(self, pairs: list[MediaPair]) -> None:
+        paired_paths = self._paired_paths(pairs)
+        media_files = FolderScanner(Config.memories_folder).scan_media_files()
+
+        for file_path in media_files:
+            if file_path not in paired_paths:
+                self.state_store.mark_skipped(file_path, "overlay")
+
+    @staticmethod
+    def _paired_paths(pairs: list[MediaPair]) -> set[Path]:
+        paired_paths = set()
+        for pair in pairs:
+            paired_paths.add(pair.main_path)
+            paired_paths.add(pair.overlay_path)
+        return paired_paths
+
+    def _purge_non_failed_overlays(self) -> None:
+        deleted = 0
+        for overlay_path in Config.memories_folder.iterdir():
+            if self._should_purge_overlay(overlay_path):
+                overlay_path.unlink()
+                deleted += 1
+
+        if deleted:
+            log(f"Deleted {deleted} overlay file(s).", "info")
+
+    def _should_purge_overlay(self, overlay_path: Path) -> bool:
+        is_overlay = overlay_path.is_file() and overlay_path.stem.endswith("-overlay")
+        failed = self.state_store.get_status(overlay_path, "overlay") == "failed"
+        return is_overlay and not failed

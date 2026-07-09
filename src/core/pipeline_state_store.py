@@ -66,11 +66,37 @@ class PipelineStateStore:
     ) -> bool:
         return any(self.get_status(item, stage) == "failed" for stage in stages)
 
+    def failed_stage(
+        self,
+        item: str | Path,
+        stages: tuple[PipelineStage, ...],
+    ) -> PipelineStage | None:
+        failed_stage = None
+        for stage in stages:
+            if self.get_status(item, stage) == "failed":
+                failed_stage = stage
+        return failed_stage
+
     def has_failures(self) -> bool:
         with self._lock:
             return any(
                 self._item_has_failed(item_state)
                 for item_state in self._files_locked().values()
+            )
+
+    def reset_running(self) -> None:
+        reset_count = 0
+        with self._lock:
+            for item_state in self._files_locked().values():
+                reset_count += self._reset_item_running_states(item_state)
+
+            if reset_count:
+                self._save_locked()
+
+        if reset_count:
+            log(
+                f"Reset {reset_count} stale running pipeline state(s) to pending.",
+                "warning",
             )
 
     def mark_running(self, item: str | Path, stage: PipelineStage) -> StageState:
@@ -215,7 +241,7 @@ class PipelineStateStore:
             updated_at = None
 
         return StageState(
-            status=cast(PipelineStatus, status),
+            status=cast("PipelineStatus", status),
             attempts=attempts,
             last_error=last_error,
             updated_at=updated_at,
@@ -245,7 +271,7 @@ class PipelineStateStore:
             "warning",
         )
         self._state = self._empty_state()
-        return cast(dict[str, object], self._state["files"])
+        return cast("dict[str, object]", self._state["files"])
 
     def _load(self) -> dict[str, object]:
         if not self.path.exists():
@@ -312,14 +338,14 @@ class PipelineStateStore:
         if stage not in VALID_STAGES:
             log(f"Unknown pipeline stage ignored: {stage}", "warning")
             return None
-        return cast(PipelineStage, stage)
+        return cast("PipelineStage", stage)
 
     @staticmethod
     def _normalize_status(status: PipelineStatus) -> PipelineStatus | None:
         if status not in VALID_STATUSES:
             log(f"Unknown pipeline status ignored: {status}", "warning")
             return None
-        return cast(PipelineStatus, status)
+        return cast("PipelineStatus", status)
 
     @staticmethod
     def _item_has_failed(item_state: object) -> bool:
@@ -334,6 +360,25 @@ class PipelineStateStore:
             isinstance(stage_state, dict) and stage_state.get("status") == "failed"
             for stage_state in stages.values()
         )
+
+    @staticmethod
+    def _reset_item_running_states(item_state: object) -> int:
+        if not isinstance(item_state, dict):
+            return 0
+
+        stages = item_state.get("stages")
+        if not isinstance(stages, dict):
+            return 0
+
+        reset_count = 0
+        for stage_state in stages.values():
+            if isinstance(stage_state, dict) and stage_state.get("status") == "running":
+                stage_state["status"] = "pending"
+                stage_state["last_error"] = None
+                stage_state["updated_at"] = PipelineStateStore._now()
+                reset_count += 1
+
+        return reset_count
 
     @staticmethod
     def _now() -> str:
