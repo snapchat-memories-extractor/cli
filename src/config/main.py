@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from pathlib import Path
 
 from src.config.cli_args import get_cli_args
@@ -6,7 +5,6 @@ from src.config.cli_options import build_cli_options
 from src.config.paths import ensure_directories
 
 
-@dataclass
 class Config:
     json_path: Path = None
     memories_folder: Path = None
