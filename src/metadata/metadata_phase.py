@@ -1,5 +1,4 @@
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
 from pathlib import Path
 
 from src.config import Config
@@ -13,11 +12,6 @@ from src.pipeline.stage_concurrency import StageConcurrency
 from src.ui import StatsManager
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg"}
-
-
-@dataclass(frozen=True)
-class MetadataResult:
-    matched: bool = False
 
 
 class MetadataPhase:
@@ -96,7 +90,7 @@ class MetadataPhase:
         self,
         file_path: Path,
         matcher: LocationMatcher,
-    ) -> MetadataResult:
+    ) -> bool:
         captured_at = ExifDatetimeReader(file_path).run()
         memory = matcher.match_one(file_path.stem, captured_at)
 
@@ -104,13 +98,13 @@ class MetadataPhase:
             if Config.cli_options["strict_location"]:
                 file_path.unlink(missing_ok=True)
                 log(f"Deleted unmatched file for '{file_path.stem}' (--strict)", "info")
-                return MetadataResult()
-            return MetadataResult()
+                return False
+            return False
 
         with self.stage_concurrency.gps_writer_slot():
             self._write_metadata(memory, file_path)
 
-        return MetadataResult(matched=True)
+        return True
 
     @staticmethod
     def _write_metadata(memory: Memory, file_path: Path) -> None:
@@ -120,8 +114,8 @@ class MetadataPhase:
             VideoMetadataWriter(memory, file_path).write_video_metadata()
 
     @staticmethod
-    def _update_stats(result: MetadataResult) -> None:
-        if result.matched:
+    def _update_stats(matched: bool) -> None:
+        if matched:
             StatsManager.record_matched()
         else:
             StatsManager.record_unmatched()
