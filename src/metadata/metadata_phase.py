@@ -2,7 +2,7 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from src.config import Config
-from src.core.pipeline_state_store import PipelineStateStore
+from src.core.pipeline_state_store import PipelineStateStore, PipelineStatus
 from src.core.stage_concurrency import StageConcurrency
 from src.helpers import is_image
 from src.logger import log
@@ -30,6 +30,7 @@ class MetadataPhase:
             return
 
         media_files = self._filter_blocked_media(media_files)
+        media_files = self._filter_resumable_media(media_files)
         if not media_files:
             log("No media files eligible for metadata.", "info")
             return
@@ -125,9 +126,36 @@ class MetadataPhase:
                 eligible.append(file_path)
         return eligible
 
+    def _filter_resumable_media(self, media_files: list[Path]) -> list[Path]:
+        eligible = []
+        for file_path in media_files:
+            status = self.state_store.terminal_status(file_path, "metadata")
+            if status:
+                self._log_resumed_metadata_skip(file_path, status)
+            else:
+                eligible.append(file_path)
+        return eligible
+
     def _mark_metadata_skipped(self, media_files: list[Path]) -> None:
         for file_path in media_files:
             self.state_store.mark_skipped(file_path, "metadata")
+
+    @staticmethod
+    def _log_resumed_metadata_skip(
+        file_path: Path,
+        status: PipelineStatus,
+    ) -> None:
+        if status == "failed":
+            log(
+                f"Skipping metadata for '{file_path}' because it failed earlier.",
+                "warning",
+            )
+        else:
+            log(
+                f"Skipping metadata for '{file_path}' "
+                f"because it is already {status}.",
+                "info",
+            )
 
     @staticmethod
     def _write_metadata(memory: Memory, file_path: Path) -> None:

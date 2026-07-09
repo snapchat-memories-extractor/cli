@@ -26,6 +26,7 @@ VALID_STATUSES: tuple[PipelineStatus, ...] = (
     "failed",
     "skipped",
 )
+TERMINAL_STATUSES: tuple[PipelineStatus, ...] = ("done", "failed", "skipped")
 
 
 @dataclass(frozen=True)
@@ -76,6 +77,16 @@ class PipelineStateStore:
             if self.get_status(item, stage) == "failed":
                 failed_stage = stage
         return failed_stage
+
+    def terminal_status(
+        self,
+        item: str | Path,
+        stage: PipelineStage,
+    ) -> PipelineStatus | None:
+        status = self.get_status(item, stage)
+        if status in TERMINAL_STATUSES:
+            return status
+        return None
 
     def has_failures(self) -> bool:
         with self._lock:
