@@ -21,19 +21,22 @@ class ConversionPhase:
         self.failure_store = failure_store
 
     def run(self, media_files: list[Path]) -> None:
-        futures = self._submit_media(media_files)
-
-        try:
-            self._collect_results(futures)
-        except KeyboardInterrupt:
-            self._handle_keyboard_interrupt(futures)
-
-    def _submit_media(self, media_files: list[Path]) -> dict[Future, Path]:
         max_workers = self.stage_concurrency.conversion_worker_capacity(
             Config.cli_options
         )
-        executor = ThreadPoolExecutor(max_workers=max_workers)
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = self._submit_media(executor, media_files)
 
+            try:
+                self._collect_results(futures)
+            except KeyboardInterrupt:
+                self._handle_keyboard_interrupt(futures)
+
+    def _submit_media(
+        self,
+        executor: ThreadPoolExecutor,
+        media_files: list[Path],
+    ) -> dict[Future, Path]:
         futures = {}
         for file_path in media_files:
             future = executor.submit(self._process_media, file_path)
