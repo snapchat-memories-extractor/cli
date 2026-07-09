@@ -6,8 +6,8 @@ from src.conversion.ffmpeg_converter import VideoConverter
 from src.conversion.jxl_converter import JXLConverter
 from src.core.failure_store import FailureStore
 from src.core.stage_concurrency import StageConcurrency
+from src.helpers import is_image
 from src.logger import log
-from src.media_types import is_image
 from src.ui import StatsManager, UpdateUI
 
 

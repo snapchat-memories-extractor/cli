@@ -4,9 +4,9 @@ from pathlib import Path
 from src.config import Config
 from src.core.failure_store import FailureStore
 from src.core.stage_concurrency import StageConcurrency
+from src.helpers import is_image
 from src.logger import log
 from src.matcher import ExifDatetimeReader, LocationMatcher
-from src.media_types import is_image
 from src.memories import MemoriesRepository, Memory
 from src.metadata.image_metadata_writer import ImageMetadataWriter
 from src.metadata.video_metadata_writer import VideoMetadataWriter

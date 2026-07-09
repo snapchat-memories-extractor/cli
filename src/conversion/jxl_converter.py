@@ -4,8 +4,8 @@ import sys
 from pathlib import Path
 
 from src.config import Config
+from src.helpers import is_image
 from src.logger import log
-from src.media_types import is_image
 
 CJXL_NOT_FOUND = "cjxl binary not found"
 JXL_CONVERSION_FAILED = "JXL conversion failed"

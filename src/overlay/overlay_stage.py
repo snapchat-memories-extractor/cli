@@ -1,11 +1,10 @@
 from pathlib import Path
 
 from src.config import Config
+from src.helpers import MediaPair, is_video
 from src.logger import log
-from src.media_types import is_video
 from src.overlay.image_composer import ImageComposer
 from src.overlay.video_composer import VideoComposer
-from src.scanner import MediaPair
 
 OVERLAY_OUTPUT_FAILED = "Overlay compositing produced no usable output"
 

@@ -4,8 +4,8 @@ from pathlib import Path
 
 import piexif
 
+from src.helpers import is_image
 from src.logger import log
-from src.media_types import is_image
 
 
 class ExifDatetimeReader:
