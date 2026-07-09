@@ -1,5 +1,4 @@
 from time import time
-from typing import ClassVar
 
 
 class StatsManager:
@@ -11,8 +10,6 @@ class StatsManager:
     matched_count = 0
     unmatched_count = 0
 
-    errors: ClassVar[list[str]] = []
-
     @classmethod
     def new_run(cls) -> None:
         cls.start_time = time()
@@ -20,7 +17,6 @@ class StatsManager:
         cls.failed_count = 0
         cls.matched_count = 0
         cls.unmatched_count = 0
-        cls.errors = []
 
     @classmethod
     def set_total_files(cls, total_files: int) -> None:
