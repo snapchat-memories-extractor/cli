@@ -30,20 +30,23 @@ class OverlayPhase:
             OverlayStage.purge_overlays()
             return
 
-        futures = self._submit_pairs(pairs)
-
-        try:
-            self._collect_results(futures)
-        except KeyboardInterrupt:
-            self._handle_keyboard_interrupt(futures)
-        finally:
-            OverlayStage.purge_overlays()
-
-    def _submit_pairs(self, pairs: list[MediaPair]) -> dict[Future, MediaPair]:
-        executor = ThreadPoolExecutor(
+        with ThreadPoolExecutor(
             max_workers=self.stage_concurrency.overlay_applier.max_workers
-        )
+        ) as executor:
+            futures = self._submit_pairs(executor, pairs)
 
+            try:
+                self._collect_results(futures)
+            except KeyboardInterrupt:
+                self._handle_keyboard_interrupt(futures)
+            finally:
+                OverlayStage.purge_overlays()
+
+    def _submit_pairs(
+        self,
+        executor: ThreadPoolExecutor,
+        pairs: list[MediaPair],
+    ) -> dict[Future, MediaPair]:
         futures = {}
         for pair in pairs:
             futures[executor.submit(self._apply_overlay, pair)] = pair
