@@ -13,11 +13,10 @@ if __name__ == "__main__":
 
     if fail_fast_checks():
         log("Application started", "info")
+
         App().run()
+
+        UpdateUI().run("finished")
+        log("Application finished", "info")
     else:
         log("Application aborted: required paths missing", "critical")
-
-    # ------------------------------------------------
-
-    UpdateUI().run("finished")
-    log("Application finished", "info")
