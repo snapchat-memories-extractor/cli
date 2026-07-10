@@ -1,5 +1,4 @@
-from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from threading import BoundedSemaphore
 
@@ -16,13 +15,8 @@ class StageLimiter:
             raise ValueError(INVALID_STAGE_CONCURRENCY)
         self._semaphore = BoundedSemaphore(self.max_workers)
 
-    @contextmanager
-    def slot(self) -> Iterator[None]:
-        self._semaphore.acquire()
-        try:
-            yield
-        finally:
-            self._semaphore.release()
+    def slot(self) -> AbstractContextManager[bool | None]:
+        return self._semaphore
 
 
 @dataclass
@@ -50,22 +44,14 @@ class StageConcurrency:
 
         return max(sum(active_limits), 1)
 
-    @contextmanager
-    def overlay_applier_slot(self) -> Iterator[None]:
-        with self.overlay_applier.slot():
-            yield
+    def overlay_applier_slot(self) -> AbstractContextManager[bool | None]:
+        return self.overlay_applier.slot()
 
-    @contextmanager
-    def gps_writer_slot(self) -> Iterator[None]:
-        with self.gps_writer.slot():
-            yield
+    def gps_writer_slot(self) -> AbstractContextManager[bool | None]:
+        return self.gps_writer.slot()
 
-    @contextmanager
-    def jxl_converter_slot(self) -> Iterator[None]:
-        with self.jxl_converter.slot():
-            yield
+    def jxl_converter_slot(self) -> AbstractContextManager[bool | None]:
+        return self.jxl_converter.slot()
 
-    @contextmanager
-    def av1_converter_slot(self) -> Iterator[None]:
-        with self.av1_converter.slot():
-            yield
+    def av1_converter_slot(self) -> AbstractContextManager[bool | None]:
+        return self.av1_converter.slot()
