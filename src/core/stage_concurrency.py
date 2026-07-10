@@ -2,8 +2,6 @@ from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from threading import BoundedSemaphore
 
-INVALID_STAGE_CONCURRENCY = "Stage concurrency must be at least 1"
-
 
 @dataclass
 class StageLimiter:
@@ -11,8 +9,6 @@ class StageLimiter:
     _semaphore: BoundedSemaphore = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        if self.max_workers < 1:
-            raise ValueError(INVALID_STAGE_CONCURRENCY)
         self._semaphore = BoundedSemaphore(self.max_workers)
 
     def slot(self) -> AbstractContextManager[bool | None]:
