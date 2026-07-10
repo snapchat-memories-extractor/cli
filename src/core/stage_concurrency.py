@@ -30,14 +30,17 @@ class StageConcurrency:
             av1_converter=StageLimiter(options["av1_converter_concurrency"]),
         )
 
+    # Images and videos share one conversion pool, so combine their capacities.
     def conversion_worker_capacity(self, options: dict) -> int:
-        active_limits = []
-        if options["convert_to_jxl"]:
-            active_limits.append(self.jxl_converter.max_workers)
-        if options["video_codec"] == "av1":
-            active_limits.append(self.av1_converter.max_workers)
+        workers = 0
 
-        return max(sum(active_limits), 1)
+        if options["convert_to_jxl"]:
+            workers += self.jxl_converter.max_workers
+
+        if options["video_codec"] == "av1":
+            workers += self.av1_converter.max_workers
+
+        return max(workers, 1)
 
     def overlay_applier_slot(self) -> BoundedSemaphore:
         return self.overlay_applier.slot()
