@@ -22,6 +22,7 @@ class ConversionPhase:
 
     def run(self, media_files: list[Path]) -> None:
         media_files = self._filter_blocked_media(media_files)
+        media_files = self._filter_resumable_media(media_files)
         StatsManager.set_total_files(len(media_files))
         if not media_files:
             log("No media files eligible for conversion.", "info")
@@ -85,8 +86,13 @@ class ConversionPhase:
         self.state_store.mark_running(file_path, "conversion")
         if Config.cli_options["convert_to_jxl"]:
             with self.stage_concurrency.jxl_converter_slot():
-                JXLConverter(file_path).run()
-            self.state_store.mark_done(file_path, "conversion")
+                output_path = JXLConverter(file_path).run()
+            self.state_store.mark_done(
+                file_path,
+                "conversion",
+                output_path=output_path,
+            )
+            self._mark_converted_output(file_path, output_path)
         else:
             self.state_store.mark_skipped(file_path, "conversion")
 
@@ -94,8 +100,12 @@ class ConversionPhase:
         self.state_store.mark_running(file_path, "conversion")
         if Config.cli_options["video_codec"] == "av1":
             with self.stage_concurrency.av1_converter_slot():
-                VideoConverter(file_path).run()
-            self.state_store.mark_done(file_path, "conversion")
+                output_path = VideoConverter(file_path).run()
+            self.state_store.mark_done(
+                file_path,
+                "conversion",
+                output_path=output_path,
+            )
         else:
             self.state_store.mark_skipped(file_path, "conversion")
 
@@ -116,3 +126,63 @@ class ConversionPhase:
             else:
                 eligible.append(file_path)
         return eligible
+
+    def _filter_resumable_media(self, media_files: list[Path]) -> list[Path]:
+        eligible = []
+        for file_path in media_files:
+            status = self.state_store.get_status(file_path, "conversion")
+            if self._should_skip_resumed_conversion(file_path, status):
+                self._log_resumed_conversion_skip(file_path, status)
+            else:
+                eligible.append(file_path)
+        return eligible
+
+    def _mark_converted_output(self, input_path: Path, output_path: Path) -> None:
+        self.state_store.mark_done(
+            output_path,
+            "conversion",
+            output_path=output_path,
+        )
+        self._copy_terminal_state(input_path, output_path, "overlay")
+        self._copy_terminal_state(input_path, output_path, "metadata")
+
+    def _copy_terminal_state(
+        self,
+        input_path: Path,
+        output_path: Path,
+        stage: str,
+    ) -> None:
+        status = self.state_store.terminal_status(input_path, stage)
+        if status == "done":
+            self.state_store.mark_done(output_path, stage)
+        elif status == "skipped":
+            self.state_store.mark_skipped(output_path, stage)
+
+    def _should_skip_resumed_conversion(
+        self,
+        file_path: Path,
+        status: str,
+    ) -> bool:
+        if status in ("done", "failed"):
+            return True
+        return status == "skipped" and not self._conversion_enabled(file_path)
+
+    @staticmethod
+    def _log_resumed_conversion_skip(file_path: Path, status: str) -> None:
+        if status == "failed":
+            log(
+                f"Skipping conversion for '{file_path}' because it failed earlier.",
+                "warning",
+            )
+        else:
+            log(
+                f"Skipping conversion for '{file_path}' "
+                f"because it is already {status}.",
+                "info",
+            )
+
+    @staticmethod
+    def _conversion_enabled(file_path: Path) -> bool:
+        if is_image(file_path):
+            return Config.cli_options["convert_to_jxl"]
+        return Config.cli_options["video_codec"] == "av1"

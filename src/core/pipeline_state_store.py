@@ -34,6 +34,7 @@ class StageState:
     status: PipelineStatus = "pending"
     attempts: int = 0
     last_error: str | None = None
+    output_path: str | None = None
     updated_at: str | None = None
 
 
@@ -119,8 +120,20 @@ class PipelineStateStore:
             last_error=None,
         )
 
-    def mark_done(self, item: str | Path, stage: PipelineStage) -> StageState:
-        return self._write_stage_state(item, stage, "done", last_error=None)
+    def mark_done(
+        self,
+        item: str | Path,
+        stage: PipelineStage,
+        *,
+        output_path: str | Path | None = None,
+    ) -> StageState:
+        return self._write_stage_state(
+            item,
+            stage,
+            "done",
+            last_error=None,
+            output_path=output_path,
+        )
 
     def mark_skipped(self, item: str | Path, stage: PipelineStage) -> StageState:
         return self._write_stage_state(item, stage, "skipped", last_error=None)
@@ -174,6 +187,7 @@ class PipelineStateStore:
         *,
         increment_attempts: bool = False,
         last_error: str | None,
+        output_path: str | Path | None = None,
     ) -> StageState:
         stage = self._normalize_stage(stage)
         status = self._normalize_status(status)
@@ -189,6 +203,7 @@ class PipelineStateStore:
                 status,
                 increment_attempts=increment_attempts,
                 last_error=last_error,
+                output_path=self._optional_item_key(output_path),
             )
 
     def _write_stage_state_locked(
@@ -199,6 +214,7 @@ class PipelineStateStore:
         *,
         increment_attempts: bool,
         last_error: str | None,
+        output_path: str | None = None,
     ) -> StageState:
         current = self._read_stage_state_locked(key, stage)
         attempts = current.attempts + 1 if increment_attempts else current.attempts
@@ -206,6 +222,7 @@ class PipelineStateStore:
             status=status,
             attempts=attempts,
             last_error=last_error,
+            output_path=output_path,
             updated_at=self._now(),
         )
 
@@ -214,6 +231,7 @@ class PipelineStateStore:
             "status": updated.status,
             "attempts": updated.attempts,
             "last_error": updated.last_error,
+            "output_path": updated.output_path,
             "updated_at": updated.updated_at,
         }
         self._save_locked()
@@ -240,6 +258,7 @@ class PipelineStateStore:
         status = stage_state.get("status", "pending")
         attempts = stage_state.get("attempts", 0)
         last_error = stage_state.get("last_error")
+        output_path = stage_state.get("output_path")
         updated_at = stage_state.get("updated_at")
 
         if status not in VALID_STATUSES:
@@ -248,6 +267,8 @@ class PipelineStateStore:
             attempts = 0
         if not isinstance(last_error, str):
             last_error = None
+        if not isinstance(output_path, str):
+            output_path = None
         if not isinstance(updated_at, str):
             updated_at = None
 
@@ -255,6 +276,7 @@ class PipelineStateStore:
             status=cast("PipelineStatus", status),
             attempts=attempts,
             last_error=last_error,
+            output_path=output_path,
             updated_at=updated_at,
         )
 
@@ -343,6 +365,12 @@ class PipelineStateStore:
         if isinstance(item, Path):
             return item.name
         return item
+
+    @staticmethod
+    def _optional_item_key(item: str | Path | None) -> str | None:
+        if item is None:
+            return None
+        return PipelineStateStore._item_key(item)
 
     @staticmethod
     def _normalize_stage(stage: PipelineStage) -> PipelineStage | None:
