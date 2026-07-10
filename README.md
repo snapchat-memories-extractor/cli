@@ -32,6 +32,7 @@ and can be toggled independently.
 - **Metadata embedding** — writes GPS into images and videos
 - **Image conversion** — JPEG → JPEG XL, lossless, 20-40% smaller
 - **Video conversion** — H.264 (default) or AV1 (SVT-AV1 / libaom-av1), with full quality and speed controls
+- **Resumable pipeline** - records per-stage progress so failed files are skipped by later stages and can be retried deliberately
 - **Interrupt-safe** — Ctrl+C finishes whatever pairs are already in flight before exiting cleanly, no half-written files left behind
 - **Zero system dependencies** — everything installs via pip
 
@@ -238,6 +239,48 @@ python main.py --logs-path C:\Users\user\logs\snapchat
 **Recommendations:**
 - **Default**: Good for keeping logs within the project folder
 - **Custom path**: Use `-lp` if you want to centralize logs or store them on a different drive
+
+</details>
+
+<details>
+<summary><b>Pipeline State: -rs / --reset-state and -rf / --retry-failed</b></summary>
+
+**What it does:**
+- Keeps a temporary sidecar state file while a run is incomplete
+- Saves state under `.snapchat-memories/` in the project folder
+- Tracks overlay, metadata, and conversion results per file
+- If one stage fails for a file, later stages skip that file instead of touching it
+- Deletes the state file automatically when a run finishes without failures
+- Keeps the state file after failures or interruption so the next run can resume
+
+**Flags:**
+
+| Flag | Short | Behavior |
+|---|---|---|
+| `--reset-state` | `-rs` | Delete saved pipeline state before running and process from scratch |
+| `--retry-failed` | `-rf` | Retry failed stages and stages skipped because of earlier failures |
+
+**Examples**:
+
+Resume from saved state automatically:
+```bash
+python main.py
+```
+
+Retry failed files:
+```bash
+python main.py --retry-failed
+```
+
+Ignore saved state and start fresh:
+```bash
+python main.py --reset-state
+```
+
+**Recommendations:**
+- **Default resume**: Best after an interruption or crash
+- **`--retry-failed`**: Use after fixing the cause of failures, such as a bad input file or missing encoder
+- **`--reset-state`**: Use when you want the app to forget previous progress for this memories folder
 
 </details>
 
