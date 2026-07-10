@@ -1,4 +1,3 @@
-from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from threading import BoundedSemaphore
 
@@ -11,7 +10,7 @@ class StageLimiter:
     def __post_init__(self) -> None:
         self._semaphore = BoundedSemaphore(self.max_workers)
 
-    def slot(self) -> AbstractContextManager[bool | None]:
+    def slot(self) -> BoundedSemaphore:
         return self._semaphore
 
 
@@ -40,14 +39,14 @@ class StageConcurrency:
 
         return max(sum(active_limits), 1)
 
-    def overlay_applier_slot(self) -> AbstractContextManager[bool | None]:
+    def overlay_applier_slot(self) -> BoundedSemaphore:
         return self.overlay_applier.slot()
 
-    def gps_writer_slot(self) -> AbstractContextManager[bool | None]:
+    def gps_writer_slot(self) -> BoundedSemaphore:
         return self.gps_writer.slot()
 
-    def jxl_converter_slot(self) -> AbstractContextManager[bool | None]:
+    def jxl_converter_slot(self) -> BoundedSemaphore:
         return self.jxl_converter.slot()
 
-    def av1_converter_slot(self) -> AbstractContextManager[bool | None]:
+    def av1_converter_slot(self) -> BoundedSemaphore:
         return self.av1_converter.slot()
