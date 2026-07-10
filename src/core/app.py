@@ -9,7 +9,7 @@ from src.overlay.overlay_phase import OverlayPhase
 from src.ui import StatsManager
 
 
-class MemoriesPipeline:
+class App:
     def run(self) -> None:
         stage_concurrency = StageConcurrency.from_options(Config.cli_options)
         state_store = PipelineStateStore()
