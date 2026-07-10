@@ -27,6 +27,7 @@ VALID_STATUSES: tuple[PipelineStatus, ...] = (
     "skipped",
 )
 TERMINAL_STATUSES: tuple[PipelineStatus, ...] = ("done", "failed", "skipped")
+RETRYABLE_STATUSES: tuple[PipelineStatus, ...] = ("failed", "skipped")
 
 
 @dataclass(frozen=True)
@@ -109,6 +110,21 @@ class PipelineStateStore:
             log(
                 f"Reset {reset_count} stale running pipeline state(s) to pending.",
                 "warning",
+            )
+
+    def reset_retryable(self) -> None:
+        reset_count = 0
+        with self._lock:
+            for item_state in self._files_locked().values():
+                reset_count += self._reset_item_retryable_states(item_state)
+
+            if reset_count:
+                self._save_locked()
+
+        if reset_count:
+            log(
+                f"Reset {reset_count} failed/skipped pipeline state(s) to pending.",
+                "info",
             )
 
     def mark_running(self, item: str | Path, stage: PipelineStage) -> StageState:
@@ -414,6 +430,29 @@ class PipelineStateStore:
             if isinstance(stage_state, dict) and stage_state.get("status") == "running":
                 stage_state["status"] = "pending"
                 stage_state["last_error"] = None
+                stage_state["updated_at"] = PipelineStateStore._now()
+                reset_count += 1
+
+        return reset_count
+
+    @staticmethod
+    def _reset_item_retryable_states(item_state: object) -> int:
+        if not isinstance(item_state, dict):
+            return 0
+
+        stages = item_state.get("stages")
+        if not isinstance(stages, dict):
+            return 0
+
+        reset_count = 0
+        for stage_state in stages.values():
+            if (
+                isinstance(stage_state, dict)
+                and stage_state.get("status") in RETRYABLE_STATUSES
+            ):
+                stage_state["status"] = "pending"
+                stage_state["last_error"] = None
+                stage_state["output_path"] = None
                 stage_state["updated_at"] = PipelineStateStore._now()
                 reset_count += 1
 

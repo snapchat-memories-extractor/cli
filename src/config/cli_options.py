@@ -9,6 +9,8 @@ def build_cli_options(args: argparse.Namespace) -> dict:
         "memories_folder": args.memories_folder,
         "output": args.output,
         "logs_path": args.logs_path,
+        "reset_state": args.reset_state,
+        "retry_failed": args.retry_failed,
         "max_concurrent_pairs": args.concurrent,
         "overlay_mode": args.overlay_mode,
         "overlay_applier_concurrency": args.overlay_applier_concurrency,

@@ -11,9 +11,10 @@ def crf_type(value: str) -> int:
 
 
 def positive_int(value: str) -> int:
+    positive_int_message = "Value must be at least 1"
     ivalue = int(value)
     if ivalue < 1:
-        raise argparse.ArgumentTypeError("Value must be at least 1")
+        raise argparse.ArgumentTypeError(positive_int_message)
     return ivalue
 
 
@@ -25,7 +26,10 @@ def get_cli_args() -> argparse.Namespace:
         type=str,
         default=None,
         metavar="PATH",
-        help="Path to the memories JSON file (default: ./data/memories_history.json). Short: -mj",
+        help=(
+            "Path to the memories JSON file "
+            "(default: ./data/memories_history.json). Short: -mj"
+        ),
     )
     parser.add_argument(
         "--memories-folder",
@@ -43,7 +47,10 @@ def get_cli_args() -> argparse.Namespace:
         type=str,
         default=None,
         metavar="PATH",
-        help="Custom output directory for processed files (default: ./downloads). Short: -o",
+        help=(
+            "Custom output directory for processed files "
+            "(default: ./downloads). Short: -o"
+        ),
     )
     parser.add_argument(
         "--logs-path",
@@ -52,6 +59,26 @@ def get_cli_args() -> argparse.Namespace:
         default=None,
         metavar="PATH",
         help="Custom directory for log files (default: ./logs). Short: -lp",
+    )
+    parser.add_argument(
+        "--reset-state",
+        "-rs",
+        default=False,
+        action="store_true",
+        help=(
+            "Delete saved pipeline state before processing and start fresh. "
+            "Short: -rs"
+        ),
+    )
+    parser.add_argument(
+        "--retry-failed",
+        "-rf",
+        default=False,
+        action="store_true",
+        help=(
+            "Retry failed pipeline stages and stages skipped by prior failures. "
+            "Short: -rf"
+        ),
     )
     parser.add_argument(
         "--ffmpeg-timeout",
@@ -67,8 +94,8 @@ def get_cli_args() -> argparse.Namespace:
         type=int,
         default=10,
         metavar="N",
-        help="Number of media pairs (main + overlay) to process in parallel (default: 10). \
-            This is CPU-bound work Short: -c",
+        help="Number of media pairs (main + overlay) to process in parallel \
+            (default: 10). This is CPU-bound work Short: -c",
     )
     parser.add_argument(
         "--overlay-mode",
@@ -248,8 +275,14 @@ def get_cli_args() -> argparse.Namespace:
         "--av1-tune",
         "-at",
         type=str,
-        choices=["psnr", "ssim", "vmaf_with_preprocessing", "vmaf_without_preprocessing",
-                 "vmaf_max_gain", "butteraugli"],
+        choices=[
+            "psnr",
+            "ssim",
+            "vmaf_with_preprocessing",
+            "vmaf_without_preprocessing",
+            "vmaf_max_gain",
+            "butteraugli",
+        ],
         default=None,
         metavar="METRIC",
         help="Tune libaom-av1 encoding for a specific quality metric \
