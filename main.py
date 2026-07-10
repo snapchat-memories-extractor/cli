@@ -10,9 +10,9 @@ if __name__ == "__main__":
     LogInitializer().configure_logger()
     StatsManager.new_run()
 
-    log("Application started", "info")
 
     if fail_fast_checks():
+        log("Application started", "info")
         App().run()
     else:
         log("Application aborted: required paths missing", "critical")
