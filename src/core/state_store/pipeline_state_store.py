@@ -8,6 +8,7 @@ from threading import RLock
 from typing import cast
 
 from src.config import Config
+from src.config.defaults import APP_STATE_DIR, PIPELINE_STATE_FILE_PREFIX
 from src.core.state_store.schema import (
     RETRYABLE_STATUSES,
     TERMINAL_STATUSES,
@@ -18,9 +19,6 @@ from src.core.state_store.schema import (
     StageState,
 )
 from src.logger import log
-
-APP_STATE_DIR = ".snapchat-memories"
-PIPELINE_STATE_FILE_PREFIX = "pipeline-state"
 
 
 class PipelineStateStore:
