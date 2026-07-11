@@ -108,15 +108,12 @@ class PipelineStateStore:
         self,
         item: str | Path,
         stage: PipelineStage,
-        *,
-        output_path: str | Path | None = None,
     ) -> StageState:
         return self._write_stage_state(
             item,
             stage,
             "done",
             last_error=None,
-            output_path=output_path,
         )
 
     def mark_skipped(self, item: str | Path, stage: PipelineStage) -> StageState:
@@ -167,7 +164,6 @@ class PipelineStateStore:
         *,
         increment_attempts: bool = False,
         last_error: str | None,
-        output_path: str | Path | None = None,
     ) -> StageState:
         stage = self._normalize_stage(stage)
         status = self._normalize_status(status)
@@ -175,9 +171,6 @@ class PipelineStateStore:
             return StageState()
 
         key = self._item_key(item)
-        normalized_output_path = (
-            None if output_path is None else self._item_key(output_path)
-        )
 
         with self._lock:
             return self._write_stage_state_locked(
@@ -186,7 +179,6 @@ class PipelineStateStore:
                 status,
                 increment_attempts=increment_attempts,
                 last_error=last_error,
-                output_path=normalized_output_path,
             )
 
     def _write_stage_state_locked(
@@ -197,7 +189,6 @@ class PipelineStateStore:
         *,
         increment_attempts: bool,
         last_error: str | None,
-        output_path: str | None = None,
     ) -> StageState:
         current = self._read_stage_state_locked(key, stage)
         attempts = current.attempts + 1 if increment_attempts else current.attempts
@@ -205,7 +196,6 @@ class PipelineStateStore:
             status=status,
             attempts=attempts,
             last_error=last_error,
-            output_path=output_path,
             updated_at=self._now(),
         )
 
@@ -214,7 +204,6 @@ class PipelineStateStore:
             "status": updated.status,
             "attempts": updated.attempts,
             "last_error": updated.last_error,
-            "output_path": updated.output_path,
             "updated_at": updated.updated_at,
         }
         self._save_locked()
@@ -241,7 +230,6 @@ class PipelineStateStore:
         status = stage_state.get("status", "pending")
         attempts = stage_state.get("attempts", 0)
         last_error = stage_state.get("last_error")
-        output_path = stage_state.get("output_path")
         updated_at = stage_state.get("updated_at")
 
         if status not in VALID_STATUSES:
@@ -250,8 +238,6 @@ class PipelineStateStore:
             attempts = 0
         if not isinstance(last_error, str):
             last_error = None
-        if not isinstance(output_path, str):
-            output_path = None
         if not isinstance(updated_at, str):
             updated_at = None
 
@@ -259,7 +245,6 @@ class PipelineStateStore:
             status=cast("PipelineStatus", status),
             attempts=attempts,
             last_error=last_error,
-            output_path=output_path,
             updated_at=updated_at,
         )
 
@@ -413,7 +398,6 @@ class PipelineStateStore:
             ):
                 stage_state["status"] = "pending"
                 stage_state["last_error"] = None
-                stage_state["output_path"] = None
                 stage_state["updated_at"] = PipelineStateStore._now()
                 reset_count += 1
 

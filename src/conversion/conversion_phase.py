@@ -90,7 +90,6 @@ class ConversionPhase:
             self.state_store.mark_done(
                 file_path,
                 "conversion",
-                output_path=output_path,
             )
             self._mark_converted_output(file_path, output_path)
         else:
@@ -104,7 +103,6 @@ class ConversionPhase:
             self.state_store.mark_done(
                 file_path,
                 "conversion",
-                output_path=output_path,
             )
         else:
             self.state_store.mark_skipped(file_path, "conversion")
@@ -138,11 +136,7 @@ class ConversionPhase:
         return eligible
 
     def _mark_converted_output(self, input_path: Path, output_path: Path) -> None:
-        self.state_store.mark_done(
-            output_path,
-            "conversion",
-            output_path=output_path,
-        )
+        self.state_store.mark_done(output_path, "conversion")
         self._copy_terminal_state(input_path, output_path, "overlay")
         self._copy_terminal_state(input_path, output_path, "metadata")
 

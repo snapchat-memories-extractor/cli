@@ -21,5 +21,4 @@ class StageState:
     status: PipelineStatus = "pending"
     attempts: int = 0
     last_error: str | None = None
-    output_path: str | None = None
     updated_at: str | None = None
