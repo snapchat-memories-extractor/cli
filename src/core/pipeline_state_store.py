@@ -2,7 +2,6 @@ import hashlib
 import json
 import os
 from contextlib import suppress
-from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -45,29 +44,15 @@ class PipelineStateStore:
         self._lock = RLock()
         self._state = self._load()
 
-    def get_stage_state(
-        self,
-        item: str | Path,
-        stage: PipelineStage,
-    ) -> StageState:
+    def get_status(self, item: str | Path, stage: PipelineStage) -> PipelineStatus:
         stage = self._normalize_stage(stage)
         if stage is None:
-            return StageState()
+            return "pending"
 
         key = self._item_key(item)
 
         with self._lock:
-            return self._read_stage_state_locked(key, stage)
-
-    def get_status(self, item: str | Path, stage: PipelineStage) -> PipelineStatus:
-        return self.get_stage_state(item, stage).status
-
-    def has_failed(
-        self,
-        item: str | Path,
-        stages: tuple[PipelineStage, ...],
-    ) -> bool:
-        return any(self.get_status(item, stage) == "failed" for stage in stages)
+            return self._read_stage_state_locked(key, stage).status
 
     def failed_stage(
         self,
@@ -176,10 +161,6 @@ class PipelineStateStore:
                 last_error=error,
             )
 
-    def snapshot(self) -> dict[str, object]:
-        with self._lock:
-            return deepcopy(self._state)
-
     def delete(self) -> None:
         deleted = False
         if self.path.exists():
@@ -211,6 +192,9 @@ class PipelineStateStore:
             return StageState()
 
         key = self._item_key(item)
+        normalized_output_path = (
+            None if output_path is None else self._item_key(output_path)
+        )
 
         with self._lock:
             return self._write_stage_state_locked(
@@ -219,7 +203,7 @@ class PipelineStateStore:
                 status,
                 increment_attempts=increment_attempts,
                 last_error=last_error,
-                output_path=self._optional_item_key(output_path),
+                output_path=normalized_output_path,
             )
 
     def _write_stage_state_locked(
@@ -381,12 +365,6 @@ class PipelineStateStore:
         if isinstance(item, Path):
             return item.name
         return item
-
-    @staticmethod
-    def _optional_item_key(item: str | Path | None) -> str | None:
-        if item is None:
-            return None
-        return PipelineStateStore._item_key(item)
 
     @staticmethod
     def _normalize_stage(stage: PipelineStage) -> PipelineStage | None:
