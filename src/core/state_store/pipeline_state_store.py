@@ -10,13 +10,13 @@ from typing import cast
 from src.config import Config
 from src.config.defaults import APP_STATE_DIR, PIPELINE_STATE_FILE_PREFIX
 from src.core.state_store.schema import (
+    PipelineStage,
+    PipelineStatus,
     RETRYABLE_STATUSES,
+    StageState,
     TERMINAL_STATUSES,
     VALID_STAGES,
     VALID_STATUSES,
-    PipelineStage,
-    PipelineStatus,
-    StageState,
 )
 from src.logger import log
 
