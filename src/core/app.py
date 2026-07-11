@@ -1,6 +1,6 @@
 from src.config import Config
 from src.conversion.conversion_phase import ConversionPhase
-from src.core.pipeline_state_store import PipelineStateStore
+from src.core.state_store import PipelineStateStore
 from src.core.stage_concurrency import StageConcurrency
 from src.helpers import FolderScanner
 from src.logger import log

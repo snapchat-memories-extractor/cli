@@ -449,7 +449,7 @@ class PipelineStateStore:
 
     @staticmethod
     def _repo_state_dir() -> Path:
-        return Path(__file__).resolve().parents[2] / APP_STATE_DIR
+        return Path(__file__).resolve().parents[3] / APP_STATE_DIR
 
     @staticmethod
     def _source_folder_key() -> str:

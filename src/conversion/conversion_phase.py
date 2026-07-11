@@ -4,7 +4,7 @@ from pathlib import Path
 from src.config import Config
 from src.conversion.ffmpeg_converter import VideoConverter
 from src.conversion.jxl_converter import JXLConverter
-from src.core.pipeline_state_store import PipelineStateStore
+from src.core.state_store import PipelineStateStore
 from src.core.stage_concurrency import StageConcurrency
 from src.helpers import is_image
 from src.logger import log

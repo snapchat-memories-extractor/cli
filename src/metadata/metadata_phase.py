@@ -2,7 +2,7 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from src.config import Config
-from src.core.pipeline_state_store import PipelineStateStore, PipelineStatus
+from src.core.state_store import PipelineStateStore, PipelineStatus
 from src.core.stage_concurrency import StageConcurrency
 from src.helpers import is_image
 from src.logger import log
