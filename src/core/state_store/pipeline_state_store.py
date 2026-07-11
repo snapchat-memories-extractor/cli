@@ -2,40 +2,25 @@ import hashlib
 import json
 import os
 from contextlib import suppress
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from threading import RLock
-from typing import Literal, TypeAlias, cast
+from typing import cast
 
 from src.config import Config
+from src.core.state_store.schema import (
+    RETRYABLE_STATUSES,
+    TERMINAL_STATUSES,
+    VALID_STAGES,
+    VALID_STATUSES,
+    PipelineStage,
+    PipelineStatus,
+    StageState,
+)
 from src.logger import log
 
 APP_STATE_DIR = ".snapchat-memories"
 PIPELINE_STATE_FILE_PREFIX = "pipeline-state"
-
-PipelineStage: TypeAlias = Literal["overlay", "metadata", "conversion"]
-PipelineStatus: TypeAlias = Literal["pending", "running", "done", "failed", "skipped"]
-
-VALID_STAGES: tuple[PipelineStage, ...] = ("overlay", "metadata", "conversion")
-VALID_STATUSES: tuple[PipelineStatus, ...] = (
-    "pending",
-    "running",
-    "done",
-    "failed",
-    "skipped",
-)
-TERMINAL_STATUSES: tuple[PipelineStatus, ...] = ("done", "failed", "skipped")
-RETRYABLE_STATUSES: tuple[PipelineStatus, ...] = ("failed", "skipped")
-
-
-@dataclass(frozen=True)
-class StageState:
-    status: PipelineStatus = "pending"
-    attempts: int = 0
-    last_error: str | None = None
-    output_path: str | None = None
-    updated_at: str | None = None
 
 
 class PipelineStateStore:
