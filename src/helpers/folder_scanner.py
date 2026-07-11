@@ -2,6 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
+from src.config import Config
 from src.logger import log
 
 
@@ -13,9 +14,6 @@ class MediaPair:
 
 
 class FolderScanner:
-    def __init__(self, folder: Path) -> None:
-        self.folder = folder
-
     def scan_overlay_pairs(self) -> list[MediaPair]:
         grouped = self._group_by_id(self.scan_media_files())
         return self._build_pairs(grouped)
@@ -23,7 +21,7 @@ class FolderScanner:
     def scan_media_files(self) -> list[Path]:
         return sorted(
             path
-            for path in self.folder.iterdir()
+            for path in Config.memories_folder.iterdir()
             if path.is_file()
         )
 

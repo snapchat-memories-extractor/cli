@@ -17,7 +17,7 @@ class App:
 
         OverlayPhase(stage_concurrency, state_store).run()
 
-        media_files = FolderScanner(Config.memories_folder).scan_media_files()
+        media_files = FolderScanner().scan_media_files()
         StatsManager.set_total_files(len(media_files))
 
         if not media_files:
@@ -29,7 +29,7 @@ class App:
             stage_concurrency,
             state_store,
         ).run(media_files)
-        media_files = FolderScanner(Config.memories_folder).scan_media_files()
+        media_files = FolderScanner().scan_media_files()
         StatsManager.set_total_files(len(media_files))
 
         if not media_files:

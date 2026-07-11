@@ -24,7 +24,7 @@ class OverlayPhase:
             self._skip_overlay_processing()
             return
 
-        pairs = FolderScanner(Config.memories_folder).scan_overlay_pairs()
+        pairs = FolderScanner().scan_overlay_pairs()
         self._mark_unpaired_media_skipped(pairs)
 
         if not pairs:
@@ -45,7 +45,7 @@ class OverlayPhase:
                 self._purge_non_failed_overlays()
 
     def _skip_overlay_processing(self) -> None:
-        pairs = FolderScanner(Config.memories_folder).scan_overlay_pairs()
+        pairs = FolderScanner().scan_overlay_pairs()
         self._mark_pairs_skipped(pairs)
         self._mark_overlay_skipped_for_media()
         self._purge_non_failed_overlays()
@@ -107,13 +107,13 @@ class OverlayPhase:
             self.state_store.mark_skipped(self._pair_state_key(pair), "overlay")
 
     def _mark_overlay_skipped_for_media(self) -> None:
-        media_files = FolderScanner(Config.memories_folder).scan_media_files()
+        media_files = FolderScanner().scan_media_files()
         for file_path in media_files:
             self.state_store.mark_skipped(file_path, "overlay")
 
     def _mark_unpaired_media_skipped(self, pairs: list[MediaPair]) -> None:
         paired_paths = self._paired_paths(pairs)
-        media_files = FolderScanner(Config.memories_folder).scan_media_files()
+        media_files = FolderScanner().scan_media_files()
 
         for file_path in media_files:
             if file_path not in paired_paths:
