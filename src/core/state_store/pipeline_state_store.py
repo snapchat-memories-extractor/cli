@@ -409,17 +409,9 @@ class PipelineStateStore:
 
     @staticmethod
     def _default_path() -> Path:
-        return PipelineStateStore._repo_state_dir() / (
-            f"{PIPELINE_STATE_FILE_PREFIX}-"
-            f"{PipelineStateStore._source_folder_key()}.json"
-        )
-
-    @staticmethod
-    def _repo_state_dir() -> Path:
-        return Path(__file__).resolve().parents[3] / APP_STATE_DIR
-
-    @staticmethod
-    def _source_folder_key() -> str:
         source_folder = Config.memories_folder or Path("data/memories")
         source_path = os.path.normcase(str(source_folder.expanduser().absolute()))
-        return hashlib.sha256(source_path.encode("utf-8")).hexdigest()[:16]
+        source_key = hashlib.sha256(source_path.encode("utf-8")).hexdigest()[:16]
+        state_dir = Path(__file__).resolve().parents[3] / APP_STATE_DIR
+
+        return state_dir / f"{PIPELINE_STATE_FILE_PREFIX}-{source_key}.json"
