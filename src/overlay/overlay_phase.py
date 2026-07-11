@@ -21,10 +21,7 @@ class OverlayPhase:
 
     def run(self) -> None:
         if Config.cli_options["overlay_mode"] == "off":
-            pairs = FolderScanner(Config.memories_folder).scan_overlay_pairs()
-            self._mark_pairs_skipped(pairs)
-            self._mark_overlay_skipped_for_media()
-            self._purge_non_failed_overlays()
+            self._skip_overlay_processing()
             return
 
         pairs = FolderScanner(Config.memories_folder).scan_overlay_pairs()
@@ -46,6 +43,12 @@ class OverlayPhase:
                 self._handle_keyboard_interrupt(futures)
             finally:
                 self._purge_non_failed_overlays()
+
+    def _skip_overlay_processing(self) -> None:
+        pairs = FolderScanner(Config.memories_folder).scan_overlay_pairs()
+        self._mark_pairs_skipped(pairs)
+        self._mark_overlay_skipped_for_media()
+        self._purge_non_failed_overlays()
 
     def _submit_pairs(
         self,
