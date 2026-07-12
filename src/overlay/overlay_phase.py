@@ -22,7 +22,7 @@ class OverlayPhase:
 
     def run(self) -> None:
         if Config.cli_options["overlay_mode"] == "off":
-            self._skip_overlay_processing()
+            self._purge_overlays()
             return
 
         pairs = scan_overlay_pairs()
@@ -44,12 +44,6 @@ class OverlayPhase:
                 self._handle_keyboard_interrupt(futures)
             finally:
                 self._purge_non_failed_overlays()
-
-    def _skip_overlay_processing(self) -> None:
-        pairs = scan_overlay_pairs()
-        self._mark_pairs_skipped(pairs)
-        self._mark_overlay_skipped_for_media()
-        self._purge_non_failed_overlays()
 
     def _submit_pairs(
         self,
@@ -103,15 +97,6 @@ class OverlayPhase:
         self.state_store.mark_done(pair.overlay_path, "overlay")
         self.state_store.mark_done(output_path, "overlay")
 
-    def _mark_pairs_skipped(self, pairs: list[OverlayPair]) -> None:
-        for pair in pairs:
-            self.state_store.mark_skipped(self._pair_state_key(pair), "overlay")
-
-    def _mark_overlay_skipped_for_media(self) -> None:
-        media_files = scan_memory_files()
-        for file_path in media_files:
-            self.state_store.mark_skipped(file_path, "overlay")
-
     def _mark_unpaired_media_skipped(self, pairs: list[OverlayPair]) -> None:
         paired_paths = self._paired_paths(pairs)
         media_files = scan_memory_files()
@@ -132,6 +117,16 @@ class OverlayPhase:
         deleted = 0
         for overlay_path in Config.memories_folder.iterdir():
             if self._should_purge_overlay(overlay_path):
+                overlay_path.unlink()
+                deleted += 1
+
+        if deleted:
+            log(f"Deleted {deleted} overlay file(s).", "info")
+
+    def _purge_overlays(self) -> None:
+        deleted = 0
+        for overlay_path in scan_memory_files():
+            if overlay_path.stem.endswith("-overlay"):
                 overlay_path.unlink()
                 deleted += 1
 
