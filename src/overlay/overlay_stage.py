@@ -14,21 +14,6 @@ class OverlayStage:
     def __init__(self, pair: OverlayPair) -> None:
         self.pair = pair
 
-    @staticmethod
-    def purge_overlays() -> None:
-        deleted = 0
-        for overlay_path in Config.memories_folder.iterdir():
-            # Sanity check: users may add folders even though exports normally do not.
-            if overlay_path.is_file() and overlay_path.stem.endswith("-overlay"):
-                overlay_path.unlink()
-                deleted += 1
-
-        if deleted:
-            log(
-                f"Deleted {deleted} overlay file(s).",
-                "info",
-            )
-
     def run(self) -> Path:
         mode = Config.cli_options["overlay_mode"]
 
@@ -50,7 +35,6 @@ class OverlayStage:
 
         # Only delete sources after the composited output is confirmed good.
         self.pair.main_path.unlink()
-        self.pair.overlay_path.unlink()
         temp_output.replace(output_path)
         return output_path
 
@@ -70,7 +54,6 @@ class OverlayStage:
             self._log_overlay_failure(temp_output)
             raise RuntimeError(OVERLAY_OUTPUT_FAILED)
 
-        self.pair.overlay_path.unlink()
         temp_output.replace(overlaid_path)
         return overlaid_path
 
