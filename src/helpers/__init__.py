@@ -1,4 +1,4 @@
-from src.helpers.folder_scanner import FolderScanner, MediaPair
 from src.helpers.media_types import is_image, is_video
+from src.helpers.scan_memory_files import scan_memory_files
 
-__all__ = ["FolderScanner", "MediaPair"]
+__all__ = ["is_image", "is_video", "scan_memory_files"]

@@ -1,8 +1,8 @@
 from src.config import Config
 from src.conversion.conversion_phase import ConversionPhase
-from src.core.state_store import PipelineStateStore
 from src.core.stage_concurrency import StageConcurrency
-from src.helpers import FolderScanner
+from src.core.state_store import PipelineStateStore
+from src.helpers import scan_memory_files
 from src.logger import log
 from src.metadata.metadata_phase import MetadataPhase
 from src.overlay.overlay_phase import OverlayPhase
@@ -17,7 +17,7 @@ class App:
 
         OverlayPhase(stage_concurrency, state_store).run()
 
-        media_files = FolderScanner().scan_media_files()
+        media_files = scan_memory_files()
         StatsManager.set_total_files(len(media_files))
 
         if not media_files:
@@ -29,7 +29,7 @@ class App:
             stage_concurrency,
             state_store,
         ).run(media_files)
-        media_files = FolderScanner().scan_media_files()
+        media_files = scan_memory_files()
         StatsManager.set_total_files(len(media_files))
 
         if not media_files:

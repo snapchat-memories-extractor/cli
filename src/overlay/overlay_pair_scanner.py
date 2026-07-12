@@ -2,28 +2,21 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
-from src.config import Config
+from src.helpers import scan_memory_files
 from src.logger import log
 
 
 @dataclass(frozen=True)
-class MediaPair:
+class OverlayPair:
     media_id: str
     main_path: Path
     overlay_path: Path
 
 
-class FolderScanner:
-    def scan_overlay_pairs(self) -> list[MediaPair]:
-        grouped = self._group_by_id(self.scan_media_files())
+class OverlayPairScanner:
+    def scan_pairs(self) -> list[OverlayPair]:
+        grouped = self._group_by_id(scan_memory_files())
         return self._build_pairs(grouped)
-
-    def scan_media_files(self) -> list[Path]:
-        return sorted(
-            path
-            for path in Config.memories_folder.iterdir()
-            if path.is_file()
-        )
 
     def _group_by_id(self, files: list[Path]) -> dict[str, dict[str, Path]]:
         grouped: dict[str, dict[str, Path]] = defaultdict(dict)
@@ -45,7 +38,7 @@ class FolderScanner:
         return None
 
     @staticmethod
-    def _build_pairs(grouped: dict[str, dict[str, Path]]) -> list[MediaPair]:
+    def _build_pairs(grouped: dict[str, dict[str, Path]]) -> list[OverlayPair]:
         pairs = []
         for media_id in sorted(grouped.keys()):
             roles = grouped[media_id]
@@ -53,7 +46,7 @@ class FolderScanner:
             overlay_path = roles.get("overlay")
 
             if main_path and overlay_path:
-                pairs.append(MediaPair(media_id, main_path, overlay_path))
+                pairs.append(OverlayPair(media_id, main_path, overlay_path))
             elif overlay_path:
                 log(
                     f"Found overlay file with no matching main for id "

@@ -2,10 +2,11 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from src.config import Config
-from src.core.state_store import PipelineStateStore
 from src.core.stage_concurrency import StageConcurrency
-from src.helpers import FolderScanner, MediaPair
+from src.core.state_store import PipelineStateStore
+from src.helpers import scan_memory_files
 from src.logger import log
+from src.overlay.overlay_pair_scanner import OverlayPair, OverlayPairScanner
 from src.overlay.overlay_stage import OverlayStage
 from src.ui import StatsManager
 
@@ -24,7 +25,7 @@ class OverlayPhase:
             self._skip_overlay_processing()
             return
 
-        pairs = FolderScanner().scan_overlay_pairs()
+        pairs = OverlayPairScanner().scan_pairs()
         self._mark_unpaired_media_skipped(pairs)
 
         if not pairs:
@@ -45,7 +46,7 @@ class OverlayPhase:
                 self._purge_non_failed_overlays()
 
     def _skip_overlay_processing(self) -> None:
-        pairs = FolderScanner().scan_overlay_pairs()
+        pairs = OverlayPairScanner().scan_pairs()
         self._mark_pairs_skipped(pairs)
         self._mark_overlay_skipped_for_media()
         self._purge_non_failed_overlays()
@@ -53,14 +54,14 @@ class OverlayPhase:
     def _submit_pairs(
         self,
         executor: ThreadPoolExecutor,
-        pairs: list[MediaPair],
-    ) -> dict[Future, MediaPair]:
+        pairs: list[OverlayPair],
+    ) -> dict[Future, OverlayPair]:
         futures = {}
         for pair in pairs:
             futures[executor.submit(self._apply_overlay, pair)] = pair
         return futures
 
-    def _collect_results(self, futures: dict[Future, MediaPair]) -> None:
+    def _collect_results(self, futures: dict[Future, OverlayPair]) -> None:
         for future in as_completed(futures):
             pair = futures[future]
             try:
@@ -80,13 +81,13 @@ class OverlayPhase:
                     "OVR",
                 )
 
-    def _handle_keyboard_interrupt(self, futures: dict[Future, MediaPair]) -> None:
+    def _handle_keyboard_interrupt(self, futures: dict[Future, OverlayPair]) -> None:
         log("KeyboardInterrupt received. Finishing in-flight overlays...", "info")
         unfinished = {f: futures[f] for f in futures if not f.done()}
         self._collect_results(unfinished)
         log("All in-flight overlays finished.", "info")
 
-    def _apply_overlay(self, pair: MediaPair) -> None:
+    def _apply_overlay(self, pair: OverlayPair) -> None:
         if not pair.main_path.exists():
             raise FileNotFoundError(pair.main_path)
 
@@ -102,25 +103,25 @@ class OverlayPhase:
         self.state_store.mark_done(pair.overlay_path, "overlay")
         self.state_store.mark_done(output_path, "overlay")
 
-    def _mark_pairs_skipped(self, pairs: list[MediaPair]) -> None:
+    def _mark_pairs_skipped(self, pairs: list[OverlayPair]) -> None:
         for pair in pairs:
             self.state_store.mark_skipped(self._pair_state_key(pair), "overlay")
 
     def _mark_overlay_skipped_for_media(self) -> None:
-        media_files = FolderScanner().scan_media_files()
+        media_files = scan_memory_files()
         for file_path in media_files:
             self.state_store.mark_skipped(file_path, "overlay")
 
-    def _mark_unpaired_media_skipped(self, pairs: list[MediaPair]) -> None:
+    def _mark_unpaired_media_skipped(self, pairs: list[OverlayPair]) -> None:
         paired_paths = self._paired_paths(pairs)
-        media_files = FolderScanner().scan_media_files()
+        media_files = scan_memory_files()
 
         for file_path in media_files:
             if file_path not in paired_paths:
                 self.state_store.mark_skipped(file_path, "overlay")
 
     @staticmethod
-    def _paired_paths(pairs: list[MediaPair]) -> set[Path]:
+    def _paired_paths(pairs: list[OverlayPair]) -> set[Path]:
         paired_paths = set()
         for pair in pairs:
             paired_paths.add(pair.main_path)
@@ -143,5 +144,5 @@ class OverlayPhase:
         return is_overlay and not failed
 
     @staticmethod
-    def _pair_state_key(pair: MediaPair) -> str:
+    def _pair_state_key(pair: OverlayPair) -> str:
         return f"overlay-pair:{pair.media_id}"
