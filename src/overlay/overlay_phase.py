@@ -6,8 +6,8 @@ from src.core.stage_concurrency import StageConcurrency
 from src.core.state_store import PipelineStateStore
 from src.helpers import scan_memory_files
 from src.logger import log
-from src.overlay.overlay_pair_scanner import OverlayPair, OverlayPairScanner
 from src.overlay.overlay_stage import OverlayStage
+from src.overlay.scan_overlay_pairs import OverlayPair, scan_overlay_pairs
 from src.ui import StatsManager
 
 
@@ -25,7 +25,7 @@ class OverlayPhase:
             self._skip_overlay_processing()
             return
 
-        pairs = OverlayPairScanner().scan_pairs()
+        pairs = scan_overlay_pairs()
         self._mark_unpaired_media_skipped(pairs)
 
         if not pairs:
@@ -46,7 +46,7 @@ class OverlayPhase:
                 self._purge_non_failed_overlays()
 
     def _skip_overlay_processing(self) -> None:
-        pairs = OverlayPairScanner().scan_pairs()
+        pairs = scan_overlay_pairs()
         self._mark_pairs_skipped(pairs)
         self._mark_overlay_skipped_for_media()
         self._purge_non_failed_overlays()

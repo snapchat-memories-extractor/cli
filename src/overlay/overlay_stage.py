@@ -4,7 +4,7 @@ from src.config import Config
 from src.helpers import is_video
 from src.logger import log
 from src.overlay.image_composer import ImageComposer
-from src.overlay.overlay_pair_scanner import OverlayPair
+from src.overlay.scan_overlay_pairs import OverlayPair
 from src.overlay.video_composer import VideoComposer
 
 OVERLAY_OUTPUT_FAILED = "Overlay compositing produced no usable output"
