@@ -47,6 +47,12 @@ class OverlayPairScanner:
 
             if main_path and overlay_path:
                 pairs.append(OverlayPair(media_id, main_path, overlay_path))
+            elif main_path:
+                log(
+                    f"Found main file with no matching overlay for id "
+                    f"'{media_id}': {main_path}. Skipping.",
+                    "warning",
+                )
             elif overlay_path:
                 log(
                     f"Found overlay file with no matching main for id "
