@@ -5,7 +5,7 @@ from src.config import Config
 from src.core.state_store import PipelineStateStore, PipelineStatus
 from src.helpers import scan_memory_files
 from src.logger import log
-from src.overlay.overlay_stage import OverlayStage
+from src.overlay.overlay_stage import run_overlay_stage
 from src.overlay.scan_overlay_pairs import OverlayPair, scan_overlay_pairs
 from src.ui import StatsManager
 
@@ -79,7 +79,7 @@ class OverlayPhase:
         self.state_store.mark_running(pair.main_path, "overlay")
         self.state_store.mark_running(pair.overlay_path, "overlay")
 
-        output_path = OverlayStage(pair).run()
+        output_path = run_overlay_stage(pair)
 
         self.state_store.mark_done(pair.main_path, "overlay")
         self.state_store.mark_done(pair.overlay_path, "overlay")
