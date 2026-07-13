@@ -10,7 +10,7 @@ from src.overlay.video_composer import VideoComposer
 OVERLAY_OUTPUT_FAILED = "Overlay compositing produced no usable output"
 
 
-def run_overlay_stage(pair: OverlayPair) -> Path:
+def run_overlay_job(pair: OverlayPair) -> Path:
     mode = Config.cli_options["overlay_mode"]
 
     output_path = pair.main_path.with_name(
