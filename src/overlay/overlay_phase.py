@@ -58,11 +58,6 @@ class OverlayPhase:
                 future.result()
             except Exception as error:
                 StatsManager.record_failed()
-                self.state_store.mark_failed(
-                    self._pair_state_key(pair),
-                    "overlay",
-                    str(error),
-                )
                 self.state_store.mark_failed(pair.main_path, "overlay", str(error))
                 self.state_store.mark_failed(pair.overlay_path, "overlay", str(error))
                 log(
@@ -81,13 +76,11 @@ class OverlayPhase:
         if not pair.main_path.exists():
             raise FileNotFoundError(pair.main_path)
 
-        self.state_store.mark_running(self._pair_state_key(pair), "overlay")
         self.state_store.mark_running(pair.main_path, "overlay")
         self.state_store.mark_running(pair.overlay_path, "overlay")
 
         output_path = OverlayStage(pair).run()
 
-        self.state_store.mark_done(self._pair_state_key(pair), "overlay")
         self.state_store.mark_done(pair.main_path, "overlay")
         self.state_store.mark_done(pair.overlay_path, "overlay")
         self.state_store.mark_done(output_path, "overlay")
@@ -132,7 +125,3 @@ class OverlayPhase:
 
         overlay_path.unlink()
         return True
-
-    @staticmethod
-    def _pair_state_key(pair: OverlayPair) -> str:
-        return f"overlay-pair:{pair.media_id}"

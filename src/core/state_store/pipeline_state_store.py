@@ -10,13 +10,13 @@ from typing import cast
 from src.config import Config
 from src.config.defaults import APP_STATE_DIR, PIPELINE_STATE_FILE_PREFIX
 from src.core.state_store.schema import (
-    PipelineStage,
-    PipelineStatus,
     RETRYABLE_STATUSES,
-    StageState,
     TERMINAL_STATUSES,
     VALID_STAGES,
     VALID_STATUSES,
+    PipelineStage,
+    PipelineStatus,
+    StageState,
 )
 from src.logger import log
 
@@ -27,19 +27,19 @@ class PipelineStateStore:
         self._lock = RLock()
         self._state = self._load()
 
-    def get_status(self, item: str | Path, stage: PipelineStage) -> PipelineStatus:
+    def get_status(self, item: Path, stage: PipelineStage) -> PipelineStatus:
         stage = self._normalize_stage(stage)
         if stage is None:
             return "pending"
 
-        key = self._item_key(item)
+        key = item.name
 
         with self._lock:
             return self._read_stage_state_locked(key, stage).status
 
     def failed_stage(
         self,
-        item: str | Path,
+        item: Path,
         stages: tuple[PipelineStage, ...],
     ) -> PipelineStage | None:
         failed_stage = None
@@ -50,7 +50,7 @@ class PipelineStateStore:
 
     def terminal_status(
         self,
-        item: str | Path,
+        item: Path,
         stage: PipelineStage,
     ) -> PipelineStatus | None:
         status = self.get_status(item, stage)
@@ -95,7 +95,7 @@ class PipelineStateStore:
                 "info",
             )
 
-    def mark_running(self, item: str | Path, stage: PipelineStage) -> StageState:
+    def mark_running(self, item: Path, stage: PipelineStage) -> StageState:
         return self._write_stage_state(
             item,
             stage,
@@ -106,7 +106,7 @@ class PipelineStateStore:
 
     def mark_done(
         self,
-        item: str | Path,
+        item: Path,
         stage: PipelineStage,
     ) -> StageState:
         return self._write_stage_state(
@@ -116,12 +116,12 @@ class PipelineStateStore:
             last_error=None,
         )
 
-    def mark_skipped(self, item: str | Path, stage: PipelineStage) -> StageState:
+    def mark_skipped(self, item: Path, stage: PipelineStage) -> StageState:
         return self._write_stage_state(item, stage, "skipped", last_error=None)
 
     def mark_failed(
         self,
-        item: str | Path,
+        item: Path,
         stage: PipelineStage,
         error: str,
     ) -> StageState:
@@ -129,7 +129,7 @@ class PipelineStateStore:
         if stage is None:
             return StageState()
 
-        key = self._item_key(item)
+        key = item.name
 
         with self._lock:
             current = self._read_stage_state_locked(key, stage)
@@ -158,7 +158,7 @@ class PipelineStateStore:
 
     def _write_stage_state(
         self,
-        item: str | Path,
+        item: Path,
         stage: PipelineStage,
         status: PipelineStatus,
         *,
@@ -170,7 +170,7 @@ class PipelineStateStore:
         if stage is None or status is None:
             return StageState()
 
-        key = self._item_key(item)
+        key = item.name
 
         with self._lock:
             return self._write_stage_state_locked(
@@ -327,12 +327,6 @@ class PipelineStateStore:
     @staticmethod
     def _empty_state() -> dict[str, object]:
         return {"files": {}}
-
-    @staticmethod
-    def _item_key(item: str | Path) -> str:
-        if isinstance(item, Path):
-            return item.name
-        return item
 
     @staticmethod
     def _normalize_stage(stage: PipelineStage) -> PipelineStage | None:
