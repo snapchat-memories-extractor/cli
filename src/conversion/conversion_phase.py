@@ -2,10 +2,13 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from src.config import Config
+from src.conversion.conversion_concurrency import (
+    ConversionSlots,
+    conversion_worker_capacity,
+)
 from src.conversion.ffmpeg_converter import VideoConverter
 from src.conversion.jxl_converter import JXLConverter
 from src.core.state_store import PipelineStateStore
-from src.core.stage_concurrency import StageConcurrency
 from src.helpers import is_image
 from src.logger import log
 from src.ui import StatsManager, UpdateUI
@@ -14,10 +17,9 @@ from src.ui import StatsManager, UpdateUI
 class ConversionPhase:
     def __init__(
         self,
-        stage_concurrency: StageConcurrency,
         state_store: PipelineStateStore,
     ) -> None:
-        self.stage_concurrency = stage_concurrency
+        self.conversion_slots = ConversionSlots.from_options(Config.cli_options)
         self.state_store = state_store
 
     def run(self, media_files: list[Path]) -> None:
@@ -28,9 +30,7 @@ class ConversionPhase:
             log("No media files eligible for conversion.", "info")
             return
 
-        max_workers = self.stage_concurrency.conversion_worker_capacity(
-            Config.cli_options
-        )
+        max_workers = conversion_worker_capacity(Config.cli_options)
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = self._submit_media(executor, media_files)
 
@@ -85,7 +85,7 @@ class ConversionPhase:
     def _process_image(self, file_path: Path) -> None:
         self.state_store.mark_running(file_path, "conversion")
         if Config.cli_options["convert_to_jxl"]:
-            with self.stage_concurrency.jxl_converter_slot():
+            with self.conversion_slots.jxl:
                 output_path = JXLConverter(file_path).run()
             self.state_store.mark_done(
                 file_path,
@@ -98,8 +98,8 @@ class ConversionPhase:
     def _process_video(self, file_path: Path) -> None:
         self.state_store.mark_running(file_path, "conversion")
         if Config.cli_options["video_codec"] == "av1":
-            with self.stage_concurrency.av1_converter_slot():
-                output_path = VideoConverter(file_path).run()
+            with self.conversion_slots.av1:
+                VideoConverter(file_path).run()
             self.state_store.mark_done(
                 file_path,
                 "conversion",

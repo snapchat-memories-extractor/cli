@@ -2,7 +2,6 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from src.config import Config
-from src.core.stage_concurrency import StageConcurrency
 from src.core.state_store import PipelineStateStore, PipelineStatus
 from src.helpers import scan_memory_files
 from src.logger import log
@@ -14,10 +13,8 @@ from src.ui import StatsManager
 class OverlayPhase:
     def __init__(
         self,
-        stage_concurrency: StageConcurrency,
         state_store: PipelineStateStore,
     ) -> None:
-        self.stage_concurrency = stage_concurrency
         self.state_store = state_store
 
     def run(self) -> None:
@@ -33,7 +30,7 @@ class OverlayPhase:
             return
 
         with ThreadPoolExecutor(
-            max_workers=self.stage_concurrency.overlay_applier.max_workers
+            max_workers=Config.cli_options["overlay_applier_concurrency"]
         ) as executor:
             futures = self._submit_pairs(executor, pairs)
 
@@ -88,8 +85,7 @@ class OverlayPhase:
         self.state_store.mark_running(pair.main_path, "overlay")
         self.state_store.mark_running(pair.overlay_path, "overlay")
 
-        with self.stage_concurrency.overlay_applier_slot():
-            output_path = OverlayStage(pair).run()
+        output_path = OverlayStage(pair).run()
 
         self.state_store.mark_done(self._pair_state_key(pair), "overlay")
         self.state_store.mark_done(pair.main_path, "overlay")

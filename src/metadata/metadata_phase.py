@@ -3,7 +3,6 @@ from pathlib import Path
 
 from src.config import Config
 from src.core.state_store import PipelineStateStore, PipelineStatus
-from src.core.stage_concurrency import StageConcurrency
 from src.helpers import is_image
 from src.logger import log
 from src.metadata.exif_datetime_reader import ExifDatetimeReader
@@ -18,10 +17,8 @@ from src.ui import StatsManager
 class MetadataPhase:
     def __init__(
         self,
-        stage_concurrency: StageConcurrency,
         state_store: PipelineStateStore,
     ) -> None:
-        self.stage_concurrency = stage_concurrency
         self.state_store = state_store
 
     def run(self, media_files: list[Path]) -> None:
@@ -37,7 +34,7 @@ class MetadataPhase:
 
         matcher = LocationMatcher(self._load_memories())
         with ThreadPoolExecutor(
-            max_workers=self.stage_concurrency.gps_writer.max_workers
+            max_workers=Config.cli_options["gps_writer_concurrency"]
         ) as executor:
             futures = self._submit_media(executor, media_files, matcher)
 
@@ -105,8 +102,7 @@ class MetadataPhase:
             self.state_store.mark_skipped(file_path, "metadata")
             return False
 
-        with self.stage_concurrency.gps_writer_slot():
-            self._write_metadata(memory, file_path)
+        self._write_metadata(memory, file_path)
 
         self.state_store.mark_done(file_path, "metadata")
         return True
