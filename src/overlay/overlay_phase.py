@@ -26,8 +26,7 @@ class OverlayPhase:
             return
 
         pairs = scan_overlay_pairs()
-        self._mark_unpaired_media_skipped(pairs)
-        self._purge_overlays(required_status="skipped")
+        self._purge_unpaired_overlays(pairs)
 
         if not pairs:
             log("No overlay pairs found to process.", "info")
@@ -98,26 +97,25 @@ class OverlayPhase:
         self.state_store.mark_done(output_path, "overlay")
         self._purge_overlay(pair.overlay_path, required_status="done")
 
-    def _mark_unpaired_media_skipped(self, pairs: list[OverlayPair]) -> None:
-        paired_paths = self._paired_paths(pairs)
-        media_files = scan_memory_files()
+    def _purge_unpaired_overlays(self, pairs: list[OverlayPair]) -> None:
+        paired_overlays = {pair.overlay_path for pair in pairs}
+        deleted = 0
 
-        for file_path in media_files:
-            if file_path not in paired_paths:
-                self.state_store.mark_skipped(file_path, "overlay")
+        for path in scan_memory_files():
+            if (
+                path.stem.endswith("-overlay")
+                and path not in paired_overlays
+            ):
+                path.unlink()
+                deleted += 1
 
-    @staticmethod
-    def _paired_paths(pairs: list[OverlayPair]) -> set[Path]:
-        paired_paths = set()
-        for pair in pairs:
-            paired_paths.add(pair.main_path)
-            paired_paths.add(pair.overlay_path)
-        return paired_paths
+        if deleted:
+            log(f"Deleted {deleted} unpaired overlay file(s).", "info")
 
     def _purge_overlays(self, required_status: PipelineStatus | None = None) -> None:
         deleted = 0
-        for overlay_path in scan_memory_files():
-            if self._purge_overlay(overlay_path, required_status):
+        for path in scan_memory_files():
+            if self._purge_overlay(path, required_status):
                 deleted += 1
 
         if deleted:
