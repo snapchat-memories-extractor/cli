@@ -1,8 +1,7 @@
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
-from pathlib import Path
 
 from src.config import Config
-from src.core.state_store import PipelineStateStore, PipelineStatus
+from src.core.state_store import PipelineStateStore
 from src.helpers import scan_memory_files
 from src.logger import log
 from src.overlay.overlay_stage import run_overlay_stage
@@ -19,11 +18,11 @@ class OverlayPhase:
 
     def run(self) -> None:
         if Config.cli_options["overlay_mode"] == "off":
-            self._purge_overlays()
+            self._delete_all_overlays()
             return
 
         pairs = scan_overlay_pairs()
-        self._purge_unpaired_overlays(pairs)
+        self._delete_unpaired_overlays(pairs)
 
         if not pairs:
             log("No overlay pairs found to process.", "info")
@@ -38,8 +37,6 @@ class OverlayPhase:
                 self._collect_results(futures)
             except KeyboardInterrupt:
                 self._handle_keyboard_interrupt(futures)
-            finally:
-                self._purge_overlays(required_status="done")
 
     def _submit_pairs(
         self,
@@ -84,9 +81,8 @@ class OverlayPhase:
         self.state_store.mark_done(pair.main_path, "overlay")
         self.state_store.mark_done(pair.overlay_path, "overlay")
         self.state_store.mark_done(output_path, "overlay")
-        self._purge_overlay(pair.overlay_path, required_status="done")
 
-    def _purge_unpaired_overlays(self, pairs: list[OverlayPair]) -> None:
+    def _delete_unpaired_overlays(self, pairs: list[OverlayPair]) -> None:
         paired_overlays = {pair.overlay_path for pair in pairs}
         deleted = 0
 
@@ -101,27 +97,15 @@ class OverlayPhase:
         if deleted:
             log(f"Deleted {deleted} unpaired overlay file(s).", "info")
 
-    def _purge_overlays(self, required_status: PipelineStatus | None = None) -> None:
+    @staticmethod
+    def _delete_all_overlays() -> None:
         deleted = 0
         for path in scan_memory_files():
-            if self._purge_overlay(path, required_status):
-                deleted += 1
+            if not path.stem.endswith("-overlay"):
+                continue
+
+            path.unlink()
+            deleted += 1
 
         if deleted:
             log(f"Deleted {deleted} overlay file(s).", "info")
-
-    def _purge_overlay(
-        self,
-        overlay_path: Path,
-        required_status: PipelineStatus | None = None,
-    ) -> bool:
-        if not overlay_path.is_file() or not overlay_path.stem.endswith("-overlay"):
-            return False
-        if (
-            required_status is not None
-            and self.state_store.get_status(overlay_path, "overlay") != required_status
-        ):
-            return False
-
-        overlay_path.unlink()
-        return True

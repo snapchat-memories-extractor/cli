@@ -340,25 +340,25 @@ python main.py --video-codec av1 --av1-converter-concurrency 2
 
 **What it does:**
 - Snapchat stores your memories separately with layers for text, stickers, drawings, etc. (overlays) you added.
-- **`on` (default)**: Composites the overlay into the main file, exactly like you see it in the Snapchat app, then deletes both original source files
+- **`on` (default)**: Composites the overlay into a new `<id>-overlaid.<ext>` file, exactly like you see it in the Snapchat app, then deletes both original source files
+- **`both`**: Composites the overlay into a new `<id>-overlaid.<ext>` file, deletes the overlay source, and keeps the original `<id>-main.<ext>` file untouched
 - **`off`**: Deletes the overlay file without compositing it, leaving the original file untouched
-- **`both`**: Creates copy of original file, applies overlay on it and then deletes the overlay, leaving you with both copies of memory.
 
 **Examples**:
 
-Default behavior - composite overlays, keep only the merged result:
+Default behavior - composite overlays, keep only the overlaid result:
 ```bash
 python main.py
-```
-
-Skip overlays entirely - keep only clean originals:
-```bash
-python main.py -om off
 ```
 
 Keep both the clean original and a separate overlaid version:
 ```bash
 python main.py -om both
+```
+
+Skip overlays entirely - keep only clean originals:
+```bash
+python main.py -om off
 ```
 
 **Recommendations:**
@@ -1026,8 +1026,8 @@ flowchart TD
     subgraph Overlay[Overlay handling]
         OverMode{--overlay-mode?}
         OverMode -->|off| RemoveOF[Remove -overlay files]
-        OverMode -->|on| AppendOF[Append id-overlay onto id-main]
-        OverMode -->|both| CopyAppendOF[Preserve id-main and append overlay to copy]
+        OverMode -->|on| AppendOF[Create id-overlaid and delete sources]
+        OverMode -->|both| CopyAppendOF[Create id-overlaid and keep id-main]
     end
 
     subgraph Metadata[Metadata handling]
