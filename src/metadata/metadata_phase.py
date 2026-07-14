@@ -28,7 +28,6 @@ class MetadataPhase:
             return
     
         media_files = scan_memory_files()
-        StatsManager.set_total_files(len(media_files))
 
         if not media_files:
             log("No media files found to process.", "info")
