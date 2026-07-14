@@ -21,6 +21,7 @@ class ImageComposer:
                 overlay_image = self._resize_to_match(overlay_image, base_image.size)
                 combined_image = Image.alpha_composite(base_image, overlay_image)
 
+        # Convert to RGB before saving as JPEG, since JPEG does not support alpha channel
         combined_rgb_image = combined_image.convert("RGB")
 
         quality = Config.cli_options["jpeg_quality"]
