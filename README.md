@@ -364,7 +364,59 @@ python main.py -om off
 **Recommendations:**
 - **`on` (default)**: Best for preserving your memories exactly as you saved them in Snapchat, without keeping duplicate files around
 - **`off`**: Best if you want clean, unedited originals for editing or archival, and don't care about the caption/sticker layer
-- **`both`**: Best if you want both versions and have the disk space to spare - note that combined with `--video-codec av1`, this means every overlaid video gets encoded twice
+- **`both`**: Best if you want both versions and have the disk space to spare - note that combined with `--video-codec av1`, both the clean and overlaid video can be converted
+
+</details>
+
+<details>
+<summary><b>Overlay Video Encoding: --overlay-video-crf / --overlay-video-preset / --overlay-video-pixel-format</b></summary>
+
+**What it does:**
+- Controls the H.264 encode used when applying overlays to videos
+- **Codec**: `libx264`
+- **Default CRF**: `18` (high quality)
+- **Default preset**: `fast`
+- **Default pixel format**: `yuv420p`
+- Audio is copied without re-encoding, and metadata is copied from the original video
+- Final AV1 conversion is still handled later by `--video-codec av1`
+
+**Flags:**
+
+| Flag | Short | Default |
+|---|---|---|
+| `--overlay-video-crf N` | `-ovc N` | `18` |
+| `--overlay-video-preset PRESET` | `-ovp PRESET` | `fast` |
+| `--overlay-video-pixel-format FORMAT` | `-ovpf FORMAT` | `yuv420p` |
+
+`--ffmpeg-preset` / `-fp` remains as a legacy alias for `--overlay-video-preset`.
+
+**Examples**:
+
+Use defaults:
+```bash
+python main.py
+```
+
+Use lossless H.264 for overlay output:
+```bash
+python main.py --overlay-video-crf 0 --overlay-video-preset ultrafast
+```
+
+Use a smaller overlay encode:
+```bash
+python main.py --overlay-video-crf 23 --overlay-video-preset fast
+```
+
+Use 10-bit overlay output:
+```bash
+python main.py --overlay-video-pixel-format yuv420p10le
+```
+
+**Recommendations:**
+- **18 / fast (default)**: Best balance for most exports
+- **0 / ultrafast**: Maximum preservation before final conversion, but much larger files
+- **23 / fast**: Smaller files with more visible compression risk
+- **yuv420p**: Best compatibility; only choose another pixel format if your playback/conversion workflow supports it
 
 </details>
 
@@ -524,7 +576,7 @@ python main.py --video-codec av1
 
 ### Advanced Options
 
-> **Note:** With the default `--video-codec h264`, videos are encoded once using fixed, sane defaults (preset, `crf 23`, `yuv420p`) and are otherwise left alone — re-encoding is only triggered when `--video-codec av1` is set. Likewise, JPEGs default to quality 95 and are left byte-identical unless `--jxl` is set. All of the advanced tuning flags below (`--crf`, `--ffmpeg-pixel-format`, every `--av1-*` flag, `--film-grain`, `--grain-denoise`) only take effect during an actual AV1 or JXL conversion — set them freely, they're simply ignored otherwise.
+> **Note:** Videos without overlays are left alone unless `--video-codec av1` is enabled. Videos with overlays are encoded during overlay using `libx264`, `--overlay-video-crf`, and `--overlay-video-preset`; metadata writing uses stream copy and does not re-encode video. Final conversion flags such as `--av1-crf`, `--ffmpeg-pixel-format`, every `--av1-*` flag, `--film-grain`, and `--grain-denoise` only affect the conversion stage. JPEGs default to quality 95 and are left byte-identical unless `--jxl` is set.
 
 <details>
 <summary><b>FFmpeg Timeout: -f / --ffmpeg-timeout SECONDS</b></summary>
@@ -553,66 +605,29 @@ python main.py --ffmpeg-timeout 120
 </details>
 
 <details>
-<summary><b>FFmpeg Preset: -fp / --ffmpeg-preset [preset]</b></summary>
+<summary><b>AV1 Constant Rate Factor: --av1-crf N</b></summary>
 
 **What it does:**
-- Sets the h264 encoding speed preset, controlling the speed/compression tradeoff
-- **Presets:** `ultrafast`, `superfast`, `veryfast`, `faster`, `fast`, `medium`, `slow`, `slower`, `veryslow`, `placebo`
-- **Default:** `fast`
-- Only applies when `--video-codec h264`. For AV1 speed control, use `--av1-preset` or `--av1-cpu-used` instead
+- Sets the quality level for final AV1 conversion. Lower = better quality and larger files, higher = smaller files with lower quality
+- **Range**: 0–63, default `36`, typical range 28–40
+- Ignored unless `--video-codec av1` is enabled
+- `--crf` and `--constant-rate-factor` remain as legacy aliases
 
 **Examples**:
 
-Use the default preset:
+Use default AV1 quality:
 ```bash
-python main.py
-```
-
-Slower preset for better compression:
-```bash
-python main.py --ffmpeg-preset slow
-```
-
-Fastest preset (largest files, lowest CPU usage):
-```bash
-python main.py -fp ultrafast
-```
-
-**Recommendations:**
-- `fast` or `medium` for a good balance of speed and file size
-- `veryslow` or `placebo` only if you want the smallest possible files and don't mind long encoding times
-
-</details>
-
-<details>
-<summary><b>Constant Rate Factor: --crf N</b></summary>
-
-**What it does:**
-- Sets the quality level for video encoding. Lower = better quality and larger files, higher = smaller files with lower quality
-- **h264**: range 0–51, default `23`, typical range 18–28
-- **AV1**: range 0–63, default `36`, typical range 28–40
-- If not set, the per-codec default is used automatically
-
-**Examples**:
-
-Use defaults (23 for h264, 36 for av1):
-```bash
-python main.py
-```
-
-Higher quality h264:
-```bash
-python main.py --crf 18
+python main.py --video-codec av1
 ```
 
 Higher quality AV1:
 ```bash
-python main.py --video-codec av1 --crf 28
+python main.py --video-codec av1 --av1-crf 28
 ```
 
 Smaller files, lower quality:
 ```bash
-python main.py --video-codec av1 --crf 42
+python main.py --video-codec av1 --av1-crf 42
 ```
 
 **Recommendations for AV1:**
@@ -627,8 +642,9 @@ python main.py --video-codec av1 --crf 42
 <summary><b>Pixel Format: -pf / --ffmpeg-pixel-format [format]</b></summary>
 
 **What it does:**
-- Sets the pixel format for video encoding, affecting color depth and compatibility
-- All available formats are planar YUV and compatible with both h264 and AV1
+- Sets the pixel format for final video conversion, affecting color depth and compatibility
+- Ignored unless final video conversion runs
+- All available formats are planar YUV
 - **Default:** `yuv420p` (widest compatibility)
 
 **Available formats:**
@@ -1099,7 +1115,7 @@ AV1 encoding is significantly more CPU-intensive than h264. Try the following to
 - Increase the preset: `--av1-preset 10` or higher (up to 13)
 - Lower simultaneous AV1 encodes: `--av1-converter-concurrency 1` or `2`
 - Enable tiling to use more CPU cores: `--av1-tile-columns 1 --av1-tile-rows 1`
-- Raise the CRF slightly to reduce the amount of work: `--crf 40`
+- Raise the CRF slightly to reduce the amount of work: `--av1-crf 40`
 
 </details>
 

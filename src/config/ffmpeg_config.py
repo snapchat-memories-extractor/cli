@@ -11,13 +11,6 @@ class FFmpegConfig:
         return "libx264"
 
     @staticmethod
-    def get_video_crf() -> str:
-        user_crf = Config.cli_options.get("crf", None)
-        if user_crf is None:
-            return "23" if Config.cli_options["video_codec"] == "h264" else "36"
-        return str(user_crf)
-
-    @staticmethod
     def get_video_pixel_format() -> str:
         return Config.cli_options["ffmpeg_pixel_format"]
 
@@ -33,13 +26,12 @@ class FFmpegConfig:
             return ["-svtav1-params", f"preset={Config.cli_options['av1_preset']}"]
 
         # libaom-av1
-        params = [
+        return [
             "-cpu-used", str(Config.cli_options["av1_cpu_used"]),
             "-tile-columns", str(Config.cli_options["av1_tile_columns"]),
             "-tile-rows", str(Config.cli_options["av1_tile_rows"]),
             "-row-mt", str(Config.cli_options["av1_row_mt"]),
         ]
-        return params
 
     @staticmethod
     def get_av1_quality_params() -> list[str]:

@@ -33,6 +33,7 @@ class VideoConverter:
     def _build_ffmpeg_command(self, temp_path: Path) -> list[str]:
         codec = FFmpegConfig.get_video_codec()
         is_av1 = Config.cli_options["video_codec"] == "av1"
+        av1_crf = Config.cli_options.get("av1_crf")
 
         command = [
             get_ffmpeg_exe(),
@@ -46,7 +47,7 @@ class VideoConverter:
             "-c:v",
             codec,
             "-crf",
-            FFmpegConfig.get_video_crf(),
+            av1_crf
         ]
 
         if is_av1:

@@ -1,15 +1,6 @@
 import argparse
 
 
-# Validate CRF value there to escape long help messages
-def crf_type(value: str) -> int:
-    inavlid_crf_message = "CRF must be between 0 (lossless) and 63 (worst quality)"
-    ivalue = int(value)
-    if not (0 <= ivalue <= 63):
-        raise argparse.ArgumentTypeError(inavlid_crf_message)
-    return ivalue
-
-
 def get_cli_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Snapchat Memories Downloader")
     parser.add_argument(
@@ -111,6 +102,55 @@ def get_cli_args() -> argparse.Namespace:
         metavar="1-50",
         help="Number of overlay compositing operations to run in parallel \
             (default: 10). Short: -oac",
+    )
+    parser.add_argument(
+        "--overlay-video-crf",
+        "-ovc",
+        type=int,
+        choices=range(0, 52),
+        default=18,
+        metavar="0-51",
+        help="H.264 CRF for video overlay encoding \
+            (default: 18). Lower is better; 0 is lossless. Short: -ovc",
+    )
+    parser.add_argument(
+        "--overlay-video-preset",
+        "--ffmpeg-preset",
+        "-ovp",
+        "-fp",
+        dest="overlay_video_preset",
+        type=str,
+        choices=[
+            "ultrafast",
+            "superfast",
+            "veryfast",
+            "faster",
+            "fast",
+            "medium",
+            "slow",
+            "slower",
+            "veryslow",
+            "placebo",
+        ],
+        default="fast",
+        help="H.264 preset for video overlay encoding \
+            (default: fast). Short: -ovp. Legacy alias: -fp / --ffmpeg-preset",
+    )
+    parser.add_argument(
+        "--overlay-video-pixel-format",
+        "-ovpf",
+        type=str,
+        choices=[
+            "yuv420p",
+            "yuv422p",
+            "yuv444p",
+            "yuv420p10le",
+            "yuv422p10le",
+            "yuv444p10le",
+        ],
+        default="yuv420p",
+        help="Pixel format for video overlay encoding \
+            (default: yuv420p). Short: -ovpf",
     )
     parser.add_argument(
         "--gps-writer-concurrency",
@@ -316,13 +356,17 @@ def get_cli_args() -> argparse.Namespace:
             1=enabled, default: 1). Only applies when --film-grain > 0. Short: -gd",
     )
     parser.add_argument(
+        "--av1-crf",
         "--constant-rate-factor",
         "--crf",
-        type=crf_type,
+        dest="av1_crf",
+        type=int,
+        choices=range(0, 64),
         default=None,
-        help="Constant Rate Factor for video quality (lower=better, 0=lossless). \
-            For h264: 0-51, typical range 18-28, default 23. \
-            For av1: 0-63, typical range 28-40, default 36.",
+        metavar="0-63",
+        help="AV1 Constant Rate Factor for final video conversion quality \
+            (lower=better, 0=lossless; default: 36). Legacy aliases: \
+            --crf / --constant-rate-factor.",
     )
     parser.add_argument(
         "--cjxl-timeout",
@@ -338,43 +382,6 @@ def get_cli_args() -> argparse.Namespace:
         default=5,
         help="Number of log files to keep, any log files beyond this number \
             will be deleted (default: 5). Short: -la",
-    )
-    parser.add_argument(
-        "--ffmpeg-preset",
-        "-fp",
-        type=str,
-        choices=[
-            "ultrafast",
-            "superfast",
-            "veryfast",
-            "faster",
-            "fast",
-            "medium",
-            "slow",
-            "slower",
-            "veryslow",
-            "placebo",
-        ],
-        default="fast",
-        help="FFmpeg preset for h264 encoding speed (default: fast). \
-            Only applies when --video-codec=h264. Short: -fp",
-    )
-    parser.add_argument(
-        "--ffmpeg-pixel-format",
-        "-pf",
-        type=str,
-        choices=[
-            "yuv420p",
-            "yuv422p",
-            "yuv444p",
-            "yuv420p10le",
-            "yuv422p10le",
-            "yuv444p10le",
-        ],
-        default="yuv420p",
-        help="Pixel format for video encoding (default: yuv420p). \
-            10-bit formats (yuv*10le) require a compatible decoder. \
-            Compatible with both h264 and av1. Short: -pf",
     )
     parser.add_argument(
         "--log-level",
