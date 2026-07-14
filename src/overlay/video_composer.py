@@ -7,12 +7,13 @@ from PIL import Image
 
 from src.config import Config
 from src.config.ffmpeg_config import FFmpegConfig
+from src.overlay.scan_overlay_pairs import OverlayPair
 
 
 class VideoComposer:
-    def __init__(self, main_path: Path, overlay_path: Path, output_path: Path) -> None:
-        self.main_path = main_path
-        self.overlay_path = overlay_path
+    def __init__(self, pair: OverlayPair, output_path: Path) -> None:
+        self.main_path = pair.main_path
+        self.overlay_path = pair.overlay_path
         self.output_path = output_path
 
     def apply_overlay(self) -> None:

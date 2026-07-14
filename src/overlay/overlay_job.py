@@ -38,17 +38,10 @@ def run_overlay_job(pair: OverlayPair) -> Path:
 
 def _composite(pair: OverlayPair, output_path: Path) -> None:
     if is_video(pair.main_path):
-        VideoComposer(
-            pair.main_path,
-            pair.overlay_path,
-            output_path,
-        ).apply_overlay()
-    else:
-        ImageComposer(
-            pair.main_path,
-            pair.overlay_path,
-            output_path,
-        ).apply_overlay()
+        VideoComposer(pair, output_path).apply_overlay()
+        return
+    
+    ImageComposer(pair, output_path).apply_overlay()
 
 
 def _is_valid_output(path: Path) -> bool:
