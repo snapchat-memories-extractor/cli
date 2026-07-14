@@ -23,6 +23,7 @@ class MetadataPhase:
 
     def run(self) -> None:
         if not Config.cli_options["write_metadata"]:
+            self._mark_metadata_skipped(media_files)
             log("Skipping metadata phase (--no-metadata).", "info")
             return
     
@@ -31,10 +32,6 @@ class MetadataPhase:
 
         if not media_files:
             log("No media files found to process.", "info")
-            return
-
-        if not Config.cli_options["write_metadata"]:
-            self._mark_metadata_skipped(media_files)
             return
 
         media_files = self._filter_blocked_media(media_files)
