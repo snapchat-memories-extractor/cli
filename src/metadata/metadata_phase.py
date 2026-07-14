@@ -33,8 +33,11 @@ class MetadataPhase:
             log("No media files found to process.", "info")
             return
 
+        # Filter out media files that failed in previous stage
         media_files = self._filter_blocked_media(media_files)
+        # Filter out media files that have already been processed in this stage
         media_files = self._filter_resumable_media(media_files)
+
         if not media_files:
             log("No media files eligible for metadata.", "info")
             return
@@ -117,7 +120,7 @@ class MetadataPhase:
     def _filter_blocked_media(self, media_files: list[Path]) -> list[Path]:
         eligible = []
         for file_path in media_files:
-            failed_stage = self.state_store.failed_stage(file_path, ("overlay",))
+            failed_stage = self.state_store.have_stage_failed(file_path, ("overlay",))
             if failed_stage:
                 self.state_store.mark_skipped(file_path, "metadata")
                 log(

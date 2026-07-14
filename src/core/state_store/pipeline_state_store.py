@@ -37,7 +37,7 @@ class PipelineStateStore:
         with self._lock:
             return self._read_stage_state_locked(key, stage).status
 
-    def failed_stage(
+    def have_stage_failed(
         self,
         item: Path,
         stages: tuple[PipelineStage, ...],

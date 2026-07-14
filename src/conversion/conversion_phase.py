@@ -116,7 +116,7 @@ class ConversionPhase:
     def _filter_blocked_media(self, media_files: list[Path]) -> list[Path]:
         eligible = []
         for file_path in media_files:
-            failed_stage = self.state_store.failed_stage(
+            failed_stage = self.state_store.have_stage_failed(
                 file_path,
                 ("overlay", "metadata"),
             )
