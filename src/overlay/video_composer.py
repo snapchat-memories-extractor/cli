@@ -2,7 +2,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from imageio_ffmpeg import get_ffmpeg_exe
+from imageio_ffmpeg import get_ffmpeg_exe, read_frames
 from PIL import Image
 
 from src.config import Config
@@ -31,22 +31,14 @@ class VideoComposer:
 
     @staticmethod
     def _get_video_dimensions(video_path: Path) -> tuple[int, int]:
-        ffprobe_response = subprocess.check_output(
-            [
-                "ffprobe",
-                "-v",
-                "error",
-                "-select_streams",
-                "v:0",
-                "-show_entries",
-                "stream=width,height",
-                "-of",
-                "csv=p=0",
-                str(video_path),
-            ],
-            text=True,
-        )
-        return tuple(map(int, ffprobe_response.strip().split(",")))
+        reader = read_frames(video_path)
+        try:
+            metadata = next(reader)
+        finally:
+            reader.close()
+
+        width, height = metadata["source_size"]
+        return int(width), int(height)
 
     def _resolve_overlay_path(
         self, width: int, height: int

@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import piexif
+from imageio_ffmpeg import get_ffmpeg_exe
 
 from src.helpers import is_image
 from src.logger import log
@@ -41,13 +42,8 @@ class ExifDatetimeReader:
         try:
             result = subprocess.run(
                 [
-                    "ffprobe",
-                    "-v",
-                    "error",
-                    "-show_entries",
-                    "format_tags=creation_time",
-                    "-of",
-                    "default=noprint_wrappers=1:nokey=1",
+                    get_ffmpeg_exe(),
+                    "-i",
                     str(self.file_path),
                 ],
                 capture_output=True,
@@ -56,14 +52,22 @@ class ExifDatetimeReader:
                 check=False,
             )
         except (subprocess.TimeoutExpired, OSError) as error:
-            log(f"ffprobe failed reading {self.file_path}: {error}", "warning")
+            log(f"ffmpeg failed reading {self.file_path}: {error}", "warning")
             return None
 
-        raw_value = result.stdout.strip()
+        raw_value = self._extract_creation_time(f"{result.stderr}\n{result.stdout}")
         if not raw_value:
             return None
 
         return self._parse_video_datetime(raw_value)
+
+    @staticmethod
+    def _extract_creation_time(ffmpeg_output: str) -> str | None:
+        for line in ffmpeg_output.splitlines():
+            key, separator, value = line.partition(":")
+            if separator and key.strip() == "creation_time":
+                return value.strip()
+        return None
 
     @staticmethod
     def _parse_video_datetime(raw_value: str) -> datetime | None:
