@@ -22,6 +22,10 @@ class MetadataPhase:
         self.state_store = state_store
 
     def run(self) -> None:
+        if not Config.cli_options["write_metadata"]:
+            log("Skipping metadata phase (--no-metadata).", "info")
+            return
+    
         media_files = scan_memory_files()
         StatsManager.set_total_files(len(media_files))
 
