@@ -3,7 +3,7 @@ from pathlib import Path
 
 from src.config import Config
 from src.core.state_store import PipelineStateStore, PipelineStatus
-from src.helpers import is_image
+from src.helpers import is_image, scan_memory_files
 from src.logger import log
 from src.metadata.exif_datetime_reader import ExifDatetimeReader
 from src.metadata.image_metadata_writer import ImageMetadataWriter
@@ -21,16 +21,23 @@ class MetadataPhase:
     ) -> None:
         self.state_store = state_store
 
-    def run(self, media_files: list[Path]) -> None:
+    def run(self) -> bool:
+        media_files = scan_memory_files()
+        StatsManager.set_total_files(len(media_files))
+
+        if not media_files:
+            log("No media files found to process.", "info")
+            return False
+
         if not Config.cli_options["write_metadata"]:
             self._mark_metadata_skipped(media_files)
-            return
+            return True
 
         media_files = self._filter_blocked_media(media_files)
         media_files = self._filter_resumable_media(media_files)
         if not media_files:
             log("No media files eligible for metadata.", "info")
-            return
+            return True
 
         matcher = LocationMatcher(self._load_memories())
         with ThreadPoolExecutor(
@@ -42,6 +49,8 @@ class MetadataPhase:
                 self._collect_results(futures)
             except KeyboardInterrupt:
                 self._handle_keyboard_interrupt(futures)
+
+        return True
 
     @staticmethod
     def _load_memories() -> list[Memory]:

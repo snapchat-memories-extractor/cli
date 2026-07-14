@@ -15,15 +15,10 @@ class App:
 
         OverlayPhase(state_store).run()
 
-        media_files = scan_memory_files()
-        StatsManager.set_total_files(len(media_files))
-
-        if not media_files:
-            log("No media files found to process.", "info")
+        if not MetadataPhase(state_store).run():
             self._delete_state_if_successful(state_store)
             return
 
-        MetadataPhase(state_store).run(media_files)
         media_files = scan_memory_files()
         StatsManager.set_total_files(len(media_files))
 
