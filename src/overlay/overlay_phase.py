@@ -1,7 +1,7 @@
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 
 from src.config import Config
-from src.core.state_store import PipelineStateStore
+from src.core.state_store import PipelineStateStore, PipelineStatus
 from src.helpers import scan_memory_files
 from src.logger import log
 from src.overlay.overlay_job import run_overlay_job
@@ -29,6 +29,8 @@ class OverlayPhase:
         # overlays before processing.
         self._delete_unpaired_overlays(pairs)
         self._mark_unpaired_main_overlays_skipped(pairs)
+        # Filter out files that have already been processed in this stage (done / failed / skipped)
+        pairs = self._filter_resumable_pairs(pairs)
 
         if not pairs:
             log("No overlay pairs found to process.", "info")
@@ -88,6 +90,22 @@ class OverlayPhase:
         self.state_store.mark_done(pair.overlay_path, "overlay")
         self.state_store.mark_done(output_path, "overlay")
 
+    def _filter_resumable_pairs(self, pairs: list[OverlayPair]) -> list[OverlayPair]:
+        eligible = []
+        for pair in pairs:
+            status = self._terminal_overlay_status(pair)
+            if status:
+                self._log_resumed_overlay_skip(pair, status)
+            else:
+                eligible.append(pair)
+        return eligible
+
+    def _terminal_overlay_status(self, pair: OverlayPair) -> PipelineStatus | None:
+        return (
+            self.state_store.terminal_status(pair.main_path, "overlay")
+            or self.state_store.terminal_status(pair.overlay_path, "overlay")
+        )
+
     def _mark_all_main_overlays_skipped(self) -> None:
         for path in scan_memory_files():
             if path.stem.endswith("-main"):
@@ -113,6 +131,20 @@ class OverlayPhase:
 
         if deleted:
             log(f"Deleted {deleted} unpaired overlay file(s).", "info")
+
+    @staticmethod
+    def _log_resumed_overlay_skip(pair: OverlayPair, status: PipelineStatus) -> None:
+        if status == "failed":
+            log(
+                f"Skipping overlay for '{pair.media_id}' because it failed earlier.",
+                "warning",
+            )
+        else:
+            log(
+                f"Skipping overlay for '{pair.media_id}' "
+                f"because it is already {status}.",
+                "info",
+            )
 
     @staticmethod
     def _delete_all_overlays() -> None:
