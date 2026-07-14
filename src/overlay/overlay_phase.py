@@ -19,6 +19,7 @@ class OverlayPhase:
     def run(self) -> None:
         if Config.cli_options["overlay_mode"] == "off":
             self._delete_all_overlays()
+            log("Overlay phase skipped (--overlay-mode off).", "info")
             return
 
         pairs = scan_overlay_pairs()

@@ -7,8 +7,6 @@ from src.overlay.image_composer import ImageComposer
 from src.overlay.scan_overlay_pairs import OverlayPair
 from src.overlay.video_composer import VideoComposer
 
-OVERLAY_OUTPUT_FAILED = "Overlay compositing produced no usable output"
-
 
 def run_overlay_job(pair: OverlayPair) -> Path:
     mode = Config.cli_options["overlay_mode"]
@@ -25,7 +23,7 @@ def run_overlay_job(pair: OverlayPair) -> Path:
 
     if not _is_valid_output(temp_output):
         _log_overlay_failure(pair, temp_output)
-        raise RuntimeError(OVERLAY_OUTPUT_FAILED)
+        raise RuntimeError("Overlay compositing produced no usable output")
 
     temp_output.replace(output_path)
 
