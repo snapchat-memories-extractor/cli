@@ -22,6 +22,8 @@ class OverlayPhase:
             return
 
         pairs = scan_overlay_pairs()
+
+        # This should not happen, but just in case, delete any unpaired overlays before processing
         self._delete_unpaired_overlays(pairs)
 
         if not pairs:
