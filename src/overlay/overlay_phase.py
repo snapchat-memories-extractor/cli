@@ -18,14 +18,17 @@ class OverlayPhase:
 
     def run(self) -> None:
         if Config.cli_options["overlay_mode"] == "off":
+            self._mark_all_main_overlays_skipped()
             self._delete_all_overlays()
             log("Overlay phase skipped (--overlay-mode off).", "info")
             return
 
         pairs = scan_overlay_pairs()
 
-        # This should not happen, but just in case, delete any unpaired overlays before processing
+        # This should not happen, but just in case, delete any unpaired
+        # overlays before processing.
         self._delete_unpaired_overlays(pairs)
+        self._mark_unpaired_main_overlays_skipped(pairs)
 
         if not pairs:
             log("No overlay pairs found to process.", "info")
@@ -84,6 +87,17 @@ class OverlayPhase:
         self.state_store.mark_done(pair.main_path, "overlay")
         self.state_store.mark_done(pair.overlay_path, "overlay")
         self.state_store.mark_done(output_path, "overlay")
+
+    def _mark_all_main_overlays_skipped(self) -> None:
+        for path in scan_memory_files():
+            if path.stem.endswith("-main"):
+                self.state_store.mark_skipped(path, "overlay")
+
+    def _mark_unpaired_main_overlays_skipped(self, pairs: list[OverlayPair]) -> None:
+        paired_mains = {pair.main_path for pair in pairs}
+        for path in scan_memory_files():
+            if path.stem.endswith("-main") and path not in paired_mains:
+                self.state_store.mark_skipped(path, "overlay")
 
     def _delete_unpaired_overlays(self, pairs: list[OverlayPair]) -> None:
         paired_overlays = {pair.overlay_path for pair in pairs}
