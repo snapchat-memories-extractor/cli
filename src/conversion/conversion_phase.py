@@ -9,7 +9,7 @@ from src.conversion.conversion_concurrency import (
 from src.conversion.ffmpeg_converter import VideoConverter
 from src.conversion.jxl_converter import JXLConverter
 from src.core.state_store import PipelineStateStore
-from src.helpers import is_image
+from src.helpers import is_image, scan_memory_files
 from src.logger import log
 from src.ui import StatsManager, UpdateUI
 
@@ -22,7 +22,13 @@ class ConversionPhase:
         self.conversion_slots = ConversionSlots.from_options(Config.cli_options)
         self.state_store = state_store
 
-    def run(self, media_files: list[Path]) -> None:
+    def run(self) -> None:
+        media_files = scan_memory_files()
+        StatsManager.set_total_files(len(media_files))
+        if not media_files:
+            log("No media files left to convert.", "info")
+            return
+
         media_files = self._filter_blocked_media(media_files)
         media_files = self._filter_resumable_media(media_files)
         StatsManager.set_total_files(len(media_files))

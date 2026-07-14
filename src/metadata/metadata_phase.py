@@ -21,23 +21,23 @@ class MetadataPhase:
     ) -> None:
         self.state_store = state_store
 
-    def run(self) -> bool:
+    def run(self) -> None:
         media_files = scan_memory_files()
         StatsManager.set_total_files(len(media_files))
 
         if not media_files:
             log("No media files found to process.", "info")
-            return False
+            return
 
         if not Config.cli_options["write_metadata"]:
             self._mark_metadata_skipped(media_files)
-            return True
+            return
 
         media_files = self._filter_blocked_media(media_files)
         media_files = self._filter_resumable_media(media_files)
         if not media_files:
             log("No media files eligible for metadata.", "info")
-            return True
+            return
 
         matcher = LocationMatcher(self._load_memories())
         with ThreadPoolExecutor(
@@ -49,8 +49,6 @@ class MetadataPhase:
                 self._collect_results(futures)
             except KeyboardInterrupt:
                 self._handle_keyboard_interrupt(futures)
-
-        return True
 
     @staticmethod
     def _load_memories() -> list[Memory]:

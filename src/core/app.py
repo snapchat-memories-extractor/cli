@@ -1,11 +1,9 @@
 from src.config import Config
 from src.conversion.conversion_phase import ConversionPhase
 from src.core.state_store import PipelineStateStore
-from src.helpers import scan_memory_files
 from src.logger import log
 from src.metadata.metadata_phase import MetadataPhase
 from src.overlay.overlay_phase import OverlayPhase
-from src.ui import StatsManager
 
 
 class App:
@@ -14,20 +12,9 @@ class App:
         self._prepare_state(state_store)
 
         OverlayPhase(state_store).run()
+        MetadataPhase(state_store).run()
+        ConversionPhase(state_store).run()
 
-        if not MetadataPhase(state_store).run():
-            self._delete_state_if_successful(state_store)
-            return
-
-        media_files = scan_memory_files()
-        StatsManager.set_total_files(len(media_files))
-
-        if not media_files:
-            log("No media files left to convert.", "info")
-            self._delete_state_if_successful(state_store)
-            return
-
-        ConversionPhase(state_store).run(media_files)
         self._delete_state_if_successful(state_store)
 
     @staticmethod
