@@ -7,25 +7,15 @@ from src.metadata.memory_model import Memory
 
 
 class ImageMetadataWriter:
-    def __init__(self, memory: Memory, file_path: Path) -> None:
+    def __init__(self, memory: Memory) -> None:
         self.memory = memory
-        self.file_path = file_path
+        self.file_path = memory.file_path
 
         self.exif_metadata = {"0th": {}, "Exif": {}, "GPS": {}}
 
     def write_image_metadata(self) -> None:
-        self._set_datetime_fields()
         self._set_gps_fields()
         self._save_image_with_exif()
-
-    def _set_datetime_fields(self) -> None:
-        datetime_bytes = self.memory.exif_datetime.encode("utf-8")
-        exif = self.exif_metadata["Exif"]
-        zeroth = self.exif_metadata["0th"]
-
-        exif[piexif.ExifIFD.DateTimeOriginal] = datetime_bytes
-        exif[piexif.ExifIFD.DateTimeDigitized] = datetime_bytes
-        zeroth[piexif.ImageIFD.DateTime] = datetime_bytes
 
     def _set_gps_fields(self) -> None:
         latitude, longitude = self.memory.location_coords

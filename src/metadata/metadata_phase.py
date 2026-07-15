@@ -1,4 +1,5 @@
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
+from datetime import datetime
 from pathlib import Path
 
 from src.config import Config
@@ -8,7 +9,6 @@ from src.logger import log
 from src.metadata.exif_datetime_reader import ExifDatetimeReader
 from src.metadata.image_metadata_writer import ImageMetadataWriter
 from src.metadata.located_json_items import load_located_json_items
-from src.metadata.location_matcher import LocationMatcher
 from src.metadata.memory_model import Memory
 from src.metadata.video_metadata_writer import VideoMetadataWriter
 from src.ui import StatsManager
@@ -22,12 +22,12 @@ class MetadataPhase:
         self.state_store = state_store
 
     def run(self) -> None:
+        media_files = scan_memory_files()
+
         if not Config.cli_options["write_metadata"]:
             self._mark_metadata_skipped(media_files)
             log("Skipping metadata phase (--no-metadata).", "info")
             return
-  
-        media_files = scan_memory_files()
 
         if not media_files:
             log("No media files found to process.", "info")
@@ -42,11 +42,17 @@ class MetadataPhase:
             log("No media files eligible for metadata.", "info")
             return
 
-        matcher = LocationMatcher(self._load_memories())
+        memories = self._load_memories()
+        memories = self._match_memories(media_files, memories)
+
+        if not memories:
+            log("No media files matched metadata.", "info")
+            return
+
         with ThreadPoolExecutor(
             max_workers=Config.cli_options["gps_writer_concurrency"]
         ) as executor:
-            futures = self._submit_media(executor, media_files, matcher)
+            futures = self._submit_memories(executor, memories)
 
             try:
                 self._collect_results(futures)
@@ -58,15 +64,79 @@ class MetadataPhase:
         raw_items = load_located_json_items()
         return [Memory.model_validate(item) for item in raw_items]
 
-    def _submit_media(
+    def _match_memories(
+        self,
+        media_files: list[Path],
+        memories: list[Memory],
+    ) -> list[Memory]:
+        lookup = self._build_memory_lookup(memories)
+        matched_memories = []
+
+        for file_path in media_files:
+            self.state_store.mark_running(file_path, "metadata")
+            captured_at = ExifDatetimeReader(file_path).run()
+            memory = self._take_matching_memory(file_path, captured_at, lookup)
+
+            if memory is None:
+                self._handle_unmatched_media(file_path)
+                continue
+
+            memory.file_path = file_path
+            matched_memories.append(memory)
+
+        return matched_memories
+
+    @staticmethod
+    def _build_memory_lookup(
+        memories: list[Memory],
+    ) -> dict[datetime, list[Memory]]:
+        lookup: dict[datetime, list[Memory]] = {}
+        for memory in memories:
+            lookup.setdefault(memory.captured_at, []).append(memory)
+        return lookup
+
+    def _take_matching_memory(
+        self,
+        file_path: Path,
+        captured_at: datetime | None,
+        lookup: dict[datetime, list[Memory]],
+    ) -> Memory | None:
+        if captured_at is None:
+            return None
+
+        candidates = lookup.get(captured_at)
+        if not candidates:
+            return None
+
+        if len(candidates) > 1:
+            log(
+                f"Ambiguous match for '{file_path.stem}': {len(candidates)} json "
+                "entries share the same capture datetime. Skipping match.",
+                "error",
+                "MATCH",
+            )
+            return None
+
+        memory = candidates[0]
+        del lookup[captured_at]
+        return memory
+
+    def _handle_unmatched_media(self, file_path: Path) -> None:
+        if Config.cli_options["strict_location"]:
+            file_path.unlink(missing_ok=True)
+            log(f"Deleted unmatched file for '{file_path.stem}' (--strict)", "info")
+        self.state_store.mark_skipped(file_path, "metadata")
+        StatsManager.record_unmatched()
+
+    def _submit_memories(
         self,
         executor: ThreadPoolExecutor,
-        media_files: list[Path],
-        matcher: LocationMatcher,
+        memories: list[Memory],
     ) -> dict[Future, Path]:
         futures = {}
-        for file_path in media_files:
-            future = executor.submit(self._apply_metadata, file_path, matcher)
+        for memory in memories:
+            file_path = self._memory_file_path(memory)
+            future = executor.submit(self._apply_metadata, memory)
             futures[future] = file_path
 
         return futures
@@ -96,24 +166,9 @@ class MetadataPhase:
         self._collect_results(unfinished)
         log("All in-flight metadata writes finished.", "info")
 
-    def _apply_metadata(
-        self,
-        file_path: Path,
-        matcher: LocationMatcher,
-    ) -> bool:
-        self.state_store.mark_running(file_path, "metadata")
-        captured_at = ExifDatetimeReader(file_path).run()
-        memory = matcher.match_one(file_path.stem, captured_at)
-
-        if memory is None:
-            if Config.cli_options["strict_location"]:
-                file_path.unlink(missing_ok=True)
-                log(f"Deleted unmatched file for '{file_path.stem}' (--strict)", "info")
-            self.state_store.mark_skipped(file_path, "metadata")
-            return False
-
-        self._write_metadata(memory, file_path)
-
+    def _apply_metadata(self, memory: Memory) -> bool:
+        file_path = self._memory_file_path(memory)
+        self._write_metadata(memory)
         self.state_store.mark_done(file_path, "metadata")
         return True
 
@@ -164,11 +219,18 @@ class MetadataPhase:
             )
 
     @staticmethod
-    def _write_metadata(memory: Memory, file_path: Path) -> None:
+    def _write_metadata(memory: Memory) -> None:
+        file_path = MetadataPhase._memory_file_path(memory)
         if is_image(file_path):
-            ImageMetadataWriter(memory, file_path).write_image_metadata()
+            ImageMetadataWriter(memory).write_image_metadata()
         else:
-            VideoMetadataWriter(memory, file_path).write_video_metadata()
+            VideoMetadataWriter(memory).write_video_metadata()
+
+    @staticmethod
+    def _memory_file_path(memory: Memory) -> Path:
+        if memory.file_path is None:
+            raise ValueError
+        return memory.file_path
 
     @staticmethod
     def _update_stats(matched: bool) -> None:

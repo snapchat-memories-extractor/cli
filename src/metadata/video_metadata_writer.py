@@ -11,9 +11,9 @@ VIDEO_METADATA_FAILED = "Video metadata write failed"
 
 
 class VideoMetadataWriter:
-    def __init__(self, memory: Memory, file_path: Path) -> None:
+    def __init__(self, memory: Memory) -> None:
         self.memory = memory
-        self.file_path = file_path
+        self.file_path = memory.file_path
 
     def write_video_metadata(self) -> Path:
         temporary_video_path = self.file_path.with_suffix(".tmp.mp4")
@@ -49,7 +49,7 @@ class VideoMetadataWriter:
         ]
 
     def _ffmpeg_metadata_arguments(self) -> list[str]:
-        meta_args = ["-metadata", f"creation_time={self.memory.video_creation_time}"]
+        meta_args = []
 
         latitude, longitude = self.memory.location_coords
         iso6709 = self._to_iso6709(latitude, longitude)
