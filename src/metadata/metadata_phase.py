@@ -7,8 +7,8 @@ from src.helpers import is_image, scan_memory_files
 from src.logger import log
 from src.metadata.exif_datetime_reader import ExifDatetimeReader
 from src.metadata.image_metadata_writer import ImageMetadataWriter
+from src.metadata.located_json_items import load_located_json_items
 from src.metadata.location_matcher import LocationMatcher
-from src.metadata.memories_repository import MemoriesRepository
 from src.metadata.memory_model import Memory
 from src.metadata.video_metadata_writer import VideoMetadataWriter
 from src.ui import StatsManager
@@ -26,7 +26,7 @@ class MetadataPhase:
             self._mark_metadata_skipped(media_files)
             log("Skipping metadata phase (--no-metadata).", "info")
             return
-    
+  
         media_files = scan_memory_files()
 
         if not media_files:
@@ -55,7 +55,7 @@ class MetadataPhase:
 
     @staticmethod
     def _load_memories() -> list[Memory]:
-        raw_items = MemoriesRepository().get_raw_items()
+        raw_items = load_located_json_items()
         return [Memory.model_validate(item) for item in raw_items]
 
     def _submit_media(
