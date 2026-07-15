@@ -8,7 +8,7 @@ from src.helpers import is_image, scan_memory_files
 from src.logger import log
 from src.metadata.exif_datetime_reader import ExifDatetimeReader
 from src.metadata.image_metadata_writer import ImageMetadataWriter
-from src.metadata.located_json_items import load_located_json_items
+from src.metadata.json_memory_loader import load_json_memories
 from src.metadata.memory_model import Memory
 from src.metadata.video_metadata_writer import VideoMetadataWriter
 from src.ui import StatsManager
@@ -42,7 +42,7 @@ class MetadataPhase:
             log("No media files eligible for metadata.", "info")
             return
 
-        memories = self._load_memories()
+        memories = load_json_memories()
         memories = self._match_memories(media_files, memories)
 
         if not memories:
@@ -58,11 +58,6 @@ class MetadataPhase:
                 self._collect_results(futures)
             except KeyboardInterrupt:
                 self._handle_keyboard_interrupt(futures)
-
-    @staticmethod
-    def _load_memories() -> list[Memory]:
-        raw_items = load_located_json_items()
-        return [Memory.model_validate(item) for item in raw_items]
 
     def _match_memories(
         self,

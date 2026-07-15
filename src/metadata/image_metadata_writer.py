@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import piexif
 
 from src.metadata.image_saver import save_image

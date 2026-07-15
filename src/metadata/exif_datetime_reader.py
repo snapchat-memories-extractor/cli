@@ -77,9 +77,8 @@ class ExifDatetimeReader:
         except ValueError:
             return None
 
-        parsed = (
+        return (
             parsed.replace(tzinfo=timezone.utc)
             if parsed.tzinfo is None
             else parsed.astimezone(timezone.utc)
-        )
-        return parsed.replace(microsecond=0)
+        ).replace(microsecond=0)
