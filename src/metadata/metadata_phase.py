@@ -1,15 +1,14 @@
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
-from datetime import datetime
 from pathlib import Path
 
 from src.config import Config
 from src.core.state_store import PipelineStateStore, PipelineStatus
 from src.helpers import is_image, scan_memory_files
 from src.logger import log
-from src.metadata.exif_datetime_reader import ExifDatetimeReader
 from src.metadata.image_metadata_writer import ImageMetadataWriter
 from src.metadata.json_memory_loader import load_json_memories
 from src.metadata.memory_model import Memory
+from src.metadata.memory_path_matcher import match_memory_paths
 from src.metadata.video_metadata_writer import VideoMetadataWriter
 from src.ui import StatsManager
 
@@ -43,7 +42,9 @@ class MetadataPhase:
             return
 
         memories = load_json_memories()
-        memories = self._match_memories(media_files, memories)
+        self._mark_metadata_running(media_files)
+        memories, unmatched_files = match_memory_paths(media_files, memories)
+        self._handle_unmatched_media_files(unmatched_files)
 
         if not memories:
             log("No media files matched metadata.", "info")
@@ -59,62 +60,13 @@ class MetadataPhase:
             except KeyboardInterrupt:
                 self._handle_keyboard_interrupt(futures)
 
-    def _match_memories(
-        self,
-        media_files: list[Path],
-        memories: list[Memory],
-    ) -> list[Memory]:
-        lookup = self._build_memory_lookup(memories)
-        matched_memories = []
-
+    def _mark_metadata_running(self, media_files: list[Path]) -> None:
         for file_path in media_files:
             self.state_store.mark_running(file_path, "metadata")
-            captured_at = ExifDatetimeReader(file_path).run()
-            memory = self._take_matching_memory(file_path, captured_at, lookup)
 
-            if memory is None:
-                self._handle_unmatched_media(file_path)
-                continue
-
-            memory.file_path = file_path
-            matched_memories.append(memory)
-
-        return matched_memories
-
-    @staticmethod
-    def _build_memory_lookup(
-        memories: list[Memory],
-    ) -> dict[datetime, list[Memory]]:
-        lookup: dict[datetime, list[Memory]] = {}
-        for memory in memories:
-            lookup.setdefault(memory.captured_at, []).append(memory)
-        return lookup
-
-    def _take_matching_memory(
-        self,
-        file_path: Path,
-        captured_at: datetime | None,
-        lookup: dict[datetime, list[Memory]],
-    ) -> Memory | None:
-        if captured_at is None:
-            return None
-
-        candidates = lookup.get(captured_at)
-        if not candidates:
-            return None
-
-        if len(candidates) > 1:
-            log(
-                f"Ambiguous match for '{file_path.stem}': {len(candidates)} json "
-                "entries share the same capture datetime. Skipping match.",
-                "error",
-                "MATCH",
-            )
-            return None
-
-        memory = candidates[0]
-        del lookup[captured_at]
-        return memory
+    def _handle_unmatched_media_files(self, media_files: list[Path]) -> None:
+        for file_path in media_files:
+            self._handle_unmatched_media(file_path)
 
     def _handle_unmatched_media(self, file_path: Path) -> None:
         if Config.cli_options["strict_location"]:

@@ -1,3 +1,5 @@
+from datetime import timezone
+
 import piexif
 
 from src.metadata.image_saver import save_image
@@ -12,8 +14,19 @@ class ImageMetadataWriter:
         self.exif_metadata = {"0th": {}, "Exif": {}, "GPS": {}}
 
     def write_image_metadata(self) -> None:
+        self._set_datetime_fields()
         self._set_gps_fields()
         self._save_image_with_exif()
+
+    def _set_datetime_fields(self) -> None:
+        captured_at = self.memory.captured_at.astimezone(timezone.utc)
+        datetime_bytes = captured_at.strftime("%Y:%m:%d %H:%M:%S").encode("ascii")
+        exif = self.exif_metadata["Exif"]
+        zeroth = self.exif_metadata["0th"]
+
+        exif[piexif.ExifIFD.DateTimeOriginal] = datetime_bytes
+        exif[piexif.ExifIFD.DateTimeDigitized] = datetime_bytes
+        zeroth[piexif.ImageIFD.DateTime] = datetime_bytes
 
     def _set_gps_fields(self) -> None:
         latitude, longitude = self.memory.location_coords
