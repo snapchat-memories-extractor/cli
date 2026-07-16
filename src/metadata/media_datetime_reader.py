@@ -2,14 +2,14 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-import piexif
 from imageio_ffmpeg import get_ffmpeg_exe
 
+from src.config.main import Config
 from src.helpers import is_image
 from src.logger import log
 
 
-class ExifDatetimeReader:
+class MediaDatetimeReader:
     def __init__(self, file_path: Path) -> None:
         self.file_path = file_path
 
@@ -20,42 +20,34 @@ class ExifDatetimeReader:
 
     def _read_image_datetime(self) -> datetime | None:
         try:
-            exif_dict = piexif.load(str(self.file_path))
-        except (piexif.InvalidImageDataError, ValueError, OSError):
-            return None
-
-        raw_value = exif_dict.get("Exif", {}).get(piexif.ExifIFD.DateTimeOriginal)
-        if not raw_value:
-            return None
-
-        decoded = (
-            raw_value.decode("utf-8") if isinstance(raw_value, bytes) else raw_value
-        )
-        try:
-            return datetime.strptime(decoded, "%Y:%m:%d %H:%M:%S").replace(
-                tzinfo=timezone.utc
-            )
-        except ValueError:
+            # Use modified time because created/accessed times change when memories
+            # are copied or extracted between folders.
+            return datetime.fromtimestamp(
+                self.file_path.stat().st_mtime,
+                tz=timezone.utc,
+            ).replace(microsecond=0)
+        except OSError:
             return None
 
     def _read_video_datetime(self) -> datetime | None:
+        timeout = Config.cli_options["ffmpeg_timeout"]
         try:
             result = subprocess.run(
                 [
                     get_ffmpeg_exe(),
-                    "-i",
-                    str(self.file_path),
+                    "-i", str(self.file_path),
                 ],
-                capture_output=True,
-                text=True,
-                timeout=30,
+                capture_output=True, # Do not print ffmpeg output to console
+                text=True, # Return output as string instead of bytes
+                timeout=timeout,
+                # Error is handled by checking the return code and stderr output.
                 check=False,
             )
         except (subprocess.TimeoutExpired, OSError) as error:
             log(f"ffmpeg failed reading {self.file_path}: {error}", "warning")
             return None
 
-        raw_value = self._extract_creation_time(f"{result.stderr}\n{result.stdout}")
+        raw_value = self._extract_creation_time(result.stderr)
         if not raw_value:
             return None
 
