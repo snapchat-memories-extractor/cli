@@ -1,8 +1,10 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
 from src.metadata.media_datetime_reader import MediaDatetimeReader
 from src.metadata.memory_model import Memory
+from src.config import Config
 
 
 def match_memory_paths(
@@ -10,11 +12,12 @@ def match_memory_paths(
     memories: list[Memory],
 ) -> tuple[list[Memory], list[Path]]:
     lookup = _build_memory_lookup(memories)
+    captured_at_by_file = _read_media_datetimes(media_files)
     matched_memories = []
     unmatched_files = []
 
     for file_path in media_files:
-        captured_at = MediaDatetimeReader(file_path).run()
+        captured_at = captured_at_by_file[file_path]
         memory = _take_matching_memory(captured_at, lookup)
 
         if memory is None:
@@ -32,6 +35,18 @@ def _build_memory_lookup(memories: list[Memory]) -> dict[datetime, list[Memory]]
     for memory in memories:
         lookup.setdefault(memory.captured_at, []).append(memory)
     return lookup
+
+
+def _read_media_datetimes(
+    media_files: list[Path],
+) -> dict[Path, datetime | None]:
+    max_workers = Config.cli_options["gps_reader_concurrency"]
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        captured_at_values = executor.map(
+            lambda file_path: MediaDatetimeReader(file_path).run(),
+            media_files,
+        )
+        return dict(zip(media_files, captured_at_values, strict=True))
 
 
 def _take_matching_memory(

@@ -43,16 +43,17 @@ class MetadataPhase:
 
         memories = load_json_memories()
         self._mark_metadata_running(media_files)
-        memories, unmatched_files = match_memory_paths(media_files, memories)
+        memories, unmatched_files = match_memory_paths(
+            media_files,
+            memories,
+        )
         self._handle_unmatched_media_files(unmatched_files)
 
         if not memories:
             log("No media files matched metadata.", "info")
             return
 
-        with ThreadPoolExecutor(
-            max_workers=Config.cli_options["gps_writer_concurrency"]
-        ) as executor:
+        with ThreadPoolExecutor() as executor:
             futures = self._submit_memories(executor, memories)
 
             try:
@@ -66,14 +67,10 @@ class MetadataPhase:
 
     def _handle_unmatched_media_files(self, media_files: list[Path]) -> None:
         for file_path in media_files:
-            self._handle_unmatched_media(file_path)
-
-    def _handle_unmatched_media(self, file_path: Path) -> None:
-        if Config.cli_options["strict_location"]:
-            file_path.unlink(missing_ok=True)
-            log(f"Deleted unmatched file for '{file_path.stem}' (--strict)", "info")
-        self.state_store.mark_skipped(file_path, "metadata")
-        StatsManager.record_unmatched()
+            if Config.cli_options["strict_location"]:
+                file_path.unlink(missing_ok=True)
+                log(f"Deleted unmatched file for '{file_path.stem}' (--strict)", "info")
+            self.state_store.mark_skipped(file_path, "metadata")
 
     def _submit_memories(
         self,
