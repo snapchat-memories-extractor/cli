@@ -15,7 +15,7 @@ class VideoMetadataWriter:
         self.memory = memory
         self.file_path = memory.file_path
 
-    def write_video_metadata(self) -> Path:
+    def run(self) -> None:
         temporary_video_path = self.file_path.with_suffix(".tmp.mp4")
         command = self._build_ffmpeg_command(temporary_video_path)
 
@@ -32,8 +32,6 @@ class VideoMetadataWriter:
         else:
             self._log_ffmpeg_failure(ffmpeg_run_result, temporary_video_path)
             raise RuntimeError(VIDEO_METADATA_FAILED)
-
-        return self.file_path
 
     def _build_ffmpeg_command(self, temporary_video_path: Path) -> list[str]:
         metadata_arguments = self._ffmpeg_metadata_arguments()

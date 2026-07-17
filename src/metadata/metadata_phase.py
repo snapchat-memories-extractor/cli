@@ -142,9 +142,9 @@ class MetadataPhase:
     @staticmethod
     def _write_metadata(memory: Memory, file_path: Path) -> None:
         if is_image(file_path):
-            ImageMetadataWriter(memory).write_image_metadata()
+            ImageMetadataWriter(memory).run()
         else:
-            VideoMetadataWriter(memory).write_video_metadata()
+            VideoMetadataWriter(memory).run()
 
     @staticmethod
     def _memory_file_path(memory: Memory) -> Path:

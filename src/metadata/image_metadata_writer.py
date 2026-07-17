@@ -14,7 +14,7 @@ class ImageMetadataWriter:
 
         self.exif_metadata = {"0th": {}, "Exif": {}, "GPS": {}}
 
-    def write_image_metadata(self) -> None:
+    def run(self) -> None:
         self._set_datetime_fields()
         self._set_gps_fields()
         self._save_image_with_exif()

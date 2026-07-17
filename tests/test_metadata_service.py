@@ -46,6 +46,6 @@ def test_write_video_metadata(mock_memory_video: MagicMock, mocker) -> None:
 
     writer = VideoMetadataWriter(mock_memory_video, Path("dummy.mp4"))
     writer._log_ffmpeg_failure = MagicMock()
-    writer.write_video_metadata()
+    writer.run()
 
     assert mock_run.called
