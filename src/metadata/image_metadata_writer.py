@@ -1,8 +1,10 @@
 from datetime import timezone
+from pathlib import Path
 
 import piexif
+from PIL import Image
 
-from src.metadata.image_saver import save_image
+from src.config import Config
 from src.metadata.memory_model import Memory
 
 
@@ -67,4 +69,7 @@ class ImageMetadataWriter:
 
     def _save_image_with_exif(self) -> None:
         exif_data_bytes = piexif.dump(self.exif_metadata)
-        save_image(self.file_path, exif_bytes=exif_data_bytes)
+        quality = Config.cli_options["jpeg_quality"]
+
+        with Image.open(self.file_path) as image:
+            image.save(str(self.file_path), quality, exif_data_bytes)

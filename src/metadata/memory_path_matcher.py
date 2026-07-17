@@ -2,9 +2,9 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
+from src.config import Config
 from src.metadata.media_datetime_reader import MediaDatetimeReader
 from src.metadata.memory_model import Memory
-from src.config import Config
 
 
 def match_memory_paths(

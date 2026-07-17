@@ -40,10 +40,8 @@ class VideoMetadataWriter:
 
         return [
             get_ffmpeg_exe(),
-            "-i",
-            str(self.file_path),
-            "-c",
-            "copy",
+            "-i", str(self.file_path),
+            "-c", "copy", # Copy streams without re-encoding
             *metadata_arguments,
             str(temporary_video_path),
         ]
