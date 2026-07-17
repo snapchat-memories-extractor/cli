@@ -2,15 +2,19 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from src.config import Config
-from src.core.state_store import PipelineStateStore, PipelineStatus
-from src.helpers import is_image, scan_memory_files
+from src.core.state_store import PipelineStateStore
+from src.helpers import (
+    handle_phase_keyboard_interrupt,
+    is_image,
+    log_resumed_stage_skip,
+    scan_memory_files,
+)
 from src.logger import log
 from src.metadata.image_metadata_writer import ImageMetadataWriter
 from src.metadata.json_memory_loader import load_json_memories
 from src.metadata.memory_model import Memory
 from src.metadata.memory_path_matcher import match_memory_paths
 from src.metadata.video_metadata_writer import VideoMetadataWriter
-from src.ui import StatsManager
 
 
 class MetadataPhase:
@@ -59,7 +63,11 @@ class MetadataPhase:
             try:
                 self._collect_results(futures)
             except KeyboardInterrupt:
-                self._handle_keyboard_interrupt(futures)
+                handle_phase_keyboard_interrupt(
+                    futures,
+                    self._collect_results,
+                    "metadata writes",
+                )
 
     def _mark_metadata_running(self, media_files: list[Path]) -> None:
         for file_path in media_files:
@@ -80,7 +88,7 @@ class MetadataPhase:
         futures = {}
         for memory in memories:
             file_path = self._memory_file_path(memory)
-            future = executor.submit(self._apply_metadata, memory)
+            future = executor.submit(self._apply_metadata, memory, file_path)
             futures[future] = file_path
 
         return futures
@@ -89,30 +97,17 @@ class MetadataPhase:
         for future in as_completed(futures):
             file_path = futures[future]
             try:
-                result = future.result()
+                future.result()
             except Exception as error:
-                StatsManager.record_failed()
                 self.state_store.mark_failed(file_path, "metadata", str(error))
                 log(
                     f"Metadata stage failed for '{file_path}': {error}",
                     "error",
                     "META",
                 )
-            else:
-                self._update_stats(result)
 
-    def _handle_keyboard_interrupt(self, futures: dict[Future, Path]) -> None:
-        log(
-            "KeyboardInterrupt received. Finishing in-flight metadata writes...",
-            "info",
-        )
-        unfinished = {f: futures[f] for f in futures if not f.done()}
-        self._collect_results(unfinished)
-        log("All in-flight metadata writes finished.", "info")
-
-    def _apply_metadata(self, memory: Memory) -> bool:
-        file_path = self._memory_file_path(memory)
-        self._write_metadata(memory)
+    def _apply_metadata(self, memory: Memory, file_path: Path) -> bool:
+        self._write_metadata(memory, file_path)
         self.state_store.mark_done(file_path, "metadata")
         return True
 
@@ -136,7 +131,7 @@ class MetadataPhase:
         for file_path in media_files:
             status = self.state_store.terminal_status(file_path, "metadata")
             if status:
-                self._log_resumed_metadata_skip(file_path, status)
+                log_resumed_stage_skip("metadata", str(file_path), status)
             else:
                 eligible.append(file_path)
         return eligible
@@ -146,25 +141,7 @@ class MetadataPhase:
             self.state_store.mark_skipped(file_path, "metadata")
 
     @staticmethod
-    def _log_resumed_metadata_skip(
-        file_path: Path,
-        status: PipelineStatus,
-    ) -> None:
-        if status == "failed":
-            log(
-                f"Skipping metadata for '{file_path}' because it failed earlier.",
-                "warning",
-            )
-        else:
-            log(
-                f"Skipping metadata for '{file_path}' "
-                f"because it is already {status}.",
-                "info",
-            )
-
-    @staticmethod
-    def _write_metadata(memory: Memory) -> None:
-        file_path = MetadataPhase._memory_file_path(memory)
+    def _write_metadata(memory: Memory, file_path: Path) -> None:
         if is_image(file_path):
             ImageMetadataWriter(memory).write_image_metadata()
         else:
@@ -175,10 +152,3 @@ class MetadataPhase:
         if memory.file_path is None:
             raise ValueError
         return memory.file_path
-
-    @staticmethod
-    def _update_stats(matched: bool) -> None:
-        if matched:
-            StatsManager.record_matched()
-        else:
-            StatsManager.record_unmatched()

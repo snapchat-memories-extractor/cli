@@ -2,7 +2,11 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 
 from src.config import Config
 from src.core.state_store import PipelineStateStore, PipelineStatus
-from src.helpers import scan_memory_files
+from src.helpers import (
+    handle_phase_keyboard_interrupt,
+    log_resumed_stage_skip,
+    scan_memory_files,
+)
 from src.logger import log
 from src.overlay.overlay_job import run_overlay_job
 from src.overlay.scan_overlay_pairs import OverlayPair, scan_overlay_pairs
@@ -29,7 +33,7 @@ class OverlayPhase:
         # overlays before processing.
         self._delete_unpaired_overlays(pairs)
         self._mark_unpaired_main_overlays_skipped(pairs)
-        # Filter out files that have already been processed in this stage (done / failed / skipped)
+        # Filter out files that have already been processed in this stage
         pairs = self._filter_resumable_pairs(pairs)
 
         if not pairs:
@@ -44,7 +48,11 @@ class OverlayPhase:
             try:
                 self._collect_results(futures)
             except KeyboardInterrupt:
-                self._handle_keyboard_interrupt(futures)
+                handle_phase_keyboard_interrupt(
+                    futures,
+                    self._collect_results,
+                    "overlays",
+                )
 
     def _submit_pairs(
         self,
@@ -71,12 +79,6 @@ class OverlayPhase:
                     "OVR",
                 )
 
-    def _handle_keyboard_interrupt(self, futures: dict[Future, OverlayPair]) -> None:
-        log("KeyboardInterrupt received. Finishing in-flight overlays...", "info")
-        unfinished = {f: futures[f] for f in futures if not f.done()}
-        self._collect_results(unfinished)
-        log("All in-flight overlays finished.", "info")
-
     def _apply_overlay(self, pair: OverlayPair) -> None:
         if not pair.main_path.exists():
             raise FileNotFoundError(pair.main_path)
@@ -95,7 +97,7 @@ class OverlayPhase:
         for pair in pairs:
             status = self._terminal_overlay_status(pair)
             if status:
-                self._log_resumed_overlay_skip(pair, status)
+                log_resumed_stage_skip("overlay", pair.media_id, status)
             else:
                 eligible.append(pair)
         return eligible
@@ -131,20 +133,6 @@ class OverlayPhase:
 
         if deleted:
             log(f"Deleted {deleted} unpaired overlay file(s).", "info")
-
-    @staticmethod
-    def _log_resumed_overlay_skip(pair: OverlayPair, status: PipelineStatus) -> None:
-        if status == "failed":
-            log(
-                f"Skipping overlay for '{pair.media_id}' because it failed earlier.",
-                "warning",
-            )
-        else:
-            log(
-                f"Skipping overlay for '{pair.media_id}' "
-                f"because it is already {status}.",
-                "info",
-            )
 
     @staticmethod
     def _delete_all_overlays() -> None:
