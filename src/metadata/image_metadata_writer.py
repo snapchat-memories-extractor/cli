@@ -1,11 +1,10 @@
 from datetime import timezone
-from pathlib import Path
 
 import piexif
 from PIL import Image
 
 from src.config import Config
-from src.metadata.memory_model import Memory
+from src.metadata.json_memory_loader import Memory
 
 
 class ImageMetadataWriter:

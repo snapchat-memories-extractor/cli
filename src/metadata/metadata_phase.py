@@ -11,8 +11,7 @@ from src.helpers import (
 )
 from src.logger import log
 from src.metadata.image_metadata_writer import ImageMetadataWriter
-from src.metadata.json_memory_loader import load_json_memories
-from src.metadata.memory_model import Memory
+from src.metadata.json_memory_loader import Memory, load_json_memories
 from src.metadata.memory_path_matcher import match_memory_paths
 from src.metadata.video_metadata_writer import VideoMetadataWriter
 

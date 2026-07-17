@@ -3,8 +3,8 @@ from datetime import datetime
 from pathlib import Path
 
 from src.config import Config
+from src.metadata.json_memory_loader import Memory
 from src.metadata.media_datetime_reader import MediaDatetimeReader
-from src.metadata.memory_model import Memory
 
 
 def match_memory_paths(

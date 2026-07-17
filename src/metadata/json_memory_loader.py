@@ -2,10 +2,17 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from pydantic import BaseModel
+
 from src.config import Config
-from src.metadata.memory_model import Memory
 
 Coordinates = tuple[float, float]
+
+
+class Memory(BaseModel):
+    captured_at: datetime
+    location_coords: Coordinates
+    file_path: Path | None = None
 
 
 def load_json_memories() -> list[Memory]:
@@ -15,10 +22,10 @@ def load_json_memories() -> list[Memory]:
     memories = []
     for item in raw_items:
         coordinates = _parse_location(item)
-        datetime = _parse_datetime(item)
-        if coordinates is not None and datetime is not None:
+        captured_at = _parse_datetime(item)
+        if coordinates is not None and captured_at is not None:
             memories.append(
-                Memory(captured_at=datetime, location_coords=coordinates)
+                Memory(captured_at=captured_at, location_coords=coordinates)
             )
 
     return memories
