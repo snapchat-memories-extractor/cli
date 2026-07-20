@@ -6,8 +6,6 @@ from imageio_ffmpeg import get_ffmpeg_exe
 from src.config import Config, FFmpegConfig
 from src.logger import log
 
-VIDEO_CONVERSION_FAILED = "Video conversion failed"
-
 
 class VideoConverter:
     def __init__(self, file_path: Path) -> None:
@@ -25,39 +23,34 @@ class VideoConverter:
                 f"ffmpeg conversion failed for {self.file_path}: {error}",
                 "warning",
             )
-            raise RuntimeError(VIDEO_CONVERSION_FAILED) from error
+            raise RuntimeError("Video conversion failed") from error
 
         temp_path.replace(self.file_path)
         return self.file_path
 
     def _build_ffmpeg_command(self, temp_path: Path) -> list[str]:
         codec = FFmpegConfig.get_video_codec()
-        is_av1 = Config.cli_options["video_codec"] == "av1"
-        av1_crf = Config.cli_options.get("av1_crf")
+        av1_crf = Config.cli_options["av1_crf"]
 
         command = [
             get_ffmpeg_exe(),
-            "-y",
-            "-i",
-            str(self.file_path),
-            "-map_metadata",
-            "0",
-            "-c:a",
-            "copy",
-            "-c:v",
-            codec,
-            "-crf",
-            av1_crf
+            "-y", # Overwrite output files without asking
+            "-i", str(self.file_path),
+            "-map_metadata", "0", # Copy metadata from input to output
+            "-c:a", "copy", # Copy audio streams without re-encoding
+            "-c:v", codec,
+            "-crf", av1_crf
         ]
 
-        if is_av1:
-            command += ["-b:v", "0"]
-            command += FFmpegConfig.get_av1_speed_params()
-            command += FFmpegConfig.get_av1_quality_params()
-            command += FFmpegConfig.get_av1_film_grain_params()
-        else:
-            command += ["-preset", FFmpegConfig.get_ffmpeg_preset()]
+        # At this point we are 100% sure that the user wants to convert to AV1, so we can add the AV1-specific parameters
+        command += ["-b:v", "0"] # Set video bitrate to 0 for CRF mode (quality-based encoding)
 
+        # Add AV1 speed parameters based on the selected encoder and user preferences
+        command += FFmpegConfig.get_av1_speed_params() 
+        command += FFmpegConfig.get_av1_quality_params()
+        command += FFmpegConfig.get_av1_film_grain_params()
+
+        # Add pixel format parameter based on user preference
         command += [
             "-pix_fmt",
             FFmpegConfig.get_video_pixel_format(),
