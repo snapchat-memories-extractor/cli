@@ -1,8 +1,11 @@
 from dataclasses import dataclass
 from threading import BoundedSemaphore
 
+from src.config import Config
 
-def conversion_worker_capacity(options: dict) -> int:
+
+def conversion_worker_capacity() -> int:
+    options = Config.cli_options
     workers = 0
 
     if options["convert_to_jxl"]:
@@ -20,7 +23,8 @@ class ConversionSlots:
     av1: BoundedSemaphore
 
     @classmethod
-    def from_options(cls, options: dict) -> "ConversionSlots":
+    def from_options(cls) -> "ConversionSlots":
+        options = Config.cli_options
         return cls(
             jxl=BoundedSemaphore(options["jxl_converter_concurrency"]),
             av1=BoundedSemaphore(options["av1_converter_concurrency"]),
