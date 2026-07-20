@@ -13,7 +13,7 @@ VALID_STATUSES: tuple[PipelineStatus, ...] = (
     "skipped",
 )
 TERMINAL_STATUSES: tuple[PipelineStatus, ...] = ("done", "failed", "skipped")
-RETRYABLE_STATUSES: tuple[PipelineStatus, ...] = ("failed", "skipped")
+RETRYABLE_STATUSES: tuple[PipelineStatus, ...] = ("failed",)
 
 
 @dataclass(frozen=True)

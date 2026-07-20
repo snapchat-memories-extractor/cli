@@ -2,7 +2,7 @@ import hashlib
 import json
 import os
 from contextlib import suppress
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from threading import RLock
 from typing import cast
@@ -58,13 +58,6 @@ class PipelineStateStore:
             return status
         return None
 
-    def has_failures(self) -> bool:
-        with self._lock:
-            return any(
-                self._item_has_failed(item_state)
-                for item_state in self._files_locked().values()
-            )
-
     def reset_running(self) -> None:
         reset_count = 0
         with self._lock:
@@ -91,9 +84,30 @@ class PipelineStateStore:
 
         if reset_count:
             log(
-                f"Reset {reset_count} failed/skipped pipeline state(s) to pending.",
+                f"Reset {reset_count} failed pipeline state(s) to pending.",
                 "info",
             )
+
+    def clear_skipped(self) -> None:
+        clear_count = 0
+        removed_empty_files = False
+
+        with self._lock:
+            files = self._files_locked()
+            for key, item_state in list(files.items()):
+                stages = self._stage_states(item_state)
+                if stages is not None:
+                    clear_count += self._remove_skipped_stages(stages)
+
+                if stages == {}:
+                    files.pop(key, None)
+                    removed_empty_files = True
+
+            if clear_count or removed_empty_files:
+                self._save_locked()
+
+        if clear_count:
+            log(f"Cleared {clear_count} skipped pipeline state(s).", "info")
 
     def mark_running(self, item: Path, stage: PipelineStage) -> StageState:
         return self._write_stage_state(
@@ -117,7 +131,24 @@ class PipelineStateStore:
         )
 
     def mark_skipped(self, item: Path, stage: PipelineStage) -> StageState:
-        return self._write_stage_state(item, stage, "skipped", last_error=None)
+        stage = self._normalize_stage(stage)
+        if stage is None:
+            return StageState()
+
+        key = item.name
+
+        with self._lock:
+            current = self._read_stage_state_locked(key, stage)
+            if current.status in ("done", "failed"):
+                return current
+
+            return self._write_stage_state_locked(
+                key,
+                stage,
+                "skipped",
+                increment_attempts=False,
+                last_error=None,
+            )
 
     def mark_failed(
         self,
@@ -343,20 +374,6 @@ class PipelineStateStore:
         return cast("PipelineStatus", status)
 
     @staticmethod
-    def _item_has_failed(item_state: object) -> bool:
-        if not isinstance(item_state, dict):
-            return False
-
-        stages = item_state.get("stages")
-        if not isinstance(stages, dict):
-            return False
-
-        return any(
-            isinstance(stage_state, dict) and stage_state.get("status") == "failed"
-            for stage_state in stages.values()
-        )
-
-    @staticmethod
     def _reset_item_running_states(item_state: object) -> int:
         if not isinstance(item_state, dict):
             return 0
@@ -398,8 +415,33 @@ class PipelineStateStore:
         return reset_count
 
     @staticmethod
+    def _stage_states(item_state: object) -> dict[str, object] | None:
+        if not isinstance(item_state, dict):
+            return None
+
+        stages = item_state.get("stages")
+        if isinstance(stages, dict):
+            return stages
+
+        return None
+
+    @staticmethod
+    def _remove_skipped_stages(stages: dict[str, object]) -> int:
+        skipped_stages = [
+            stage
+            for stage, stage_state in stages.items()
+            if isinstance(stage_state, dict)
+            and stage_state.get("status") == "skipped"
+        ]
+
+        for stage in skipped_stages:
+            stages.pop(stage, None)
+
+        return len(skipped_stages)
+
+    @staticmethod
     def _now() -> str:
-        return datetime.now(tz=timezone.utc).isoformat()
+        return datetime.now(tz=UTC).isoformat()
 
     @staticmethod
     def _default_path() -> Path:

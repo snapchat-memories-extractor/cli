@@ -140,7 +140,7 @@ class ConversionPhase:
     def _filter_resumable_media(self, media_files: list[Path]) -> list[Path]:
         eligible = []
         for file_path in media_files:
-            status = self.state_store.get_status(file_path, "conversion")
+            status = self.state_store.terminal_status(file_path, "conversion")
             if status:
                 log(
                     f"Skipping conversion for '{file_path}' "

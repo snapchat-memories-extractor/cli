@@ -59,7 +59,7 @@ def get_cli_args() -> argparse.Namespace:
         default=False,
         action="store_true",
         help=(
-            "Retry failed pipeline stages and stages skipped by prior failures. "
+            "Retry failed pipeline stages. "
             "Short: -rf"
         ),
     )

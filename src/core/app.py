@@ -15,12 +15,7 @@ class App:
         MetadataPhase(state_store).run()
         ConversionPhase(state_store).run()
 
-        self._delete_state_if_successful(state_store)
-
-    @staticmethod
-    def _delete_state_if_successful(state_store: PipelineStateStore) -> None:
-        if not state_store.has_failures():
-            state_store.delete()
+        state_store.clear_skipped()
 
     @staticmethod
     def _prepare_state(state_store: PipelineStateStore) -> None:

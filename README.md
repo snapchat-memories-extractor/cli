@@ -232,17 +232,17 @@ python main.py --logs-path C:\Users\user\logs\snapchat
 **What it does:**
 - Keeps a temporary sidecar state file while a run is incomplete
 - Saves state under `.snapchat-memories/` in the project folder
-- Tracks overlay, metadata, and conversion results per file
-- If one stage fails for a file, later stages skip that file instead of touching it
-- Deletes the state file automatically when a run finishes without failures
-- Keeps the state file after failures or interruption so the next run can resume
+- Tracks completed and failed overlay, metadata, and conversion stages per file
+- If one stage fails for a file, later stages skip that file until you retry or reset
+- Clears skipped stage records after each run so old skip decisions do not surprise future runs
+- Keeps the state file until you delete it with `--reset-state`
 
 **Flags:**
 
 | Flag | Short | Behavior |
 |---|---|---|
 | `--reset-state` | `-rs` | Delete saved pipeline state before running and process from scratch |
-| `--retry-failed` | `-rf` | Retry failed stages and stages skipped because of earlier failures |
+| `--retry-failed` | `-rf` | Retry failed stages |
 
 **Examples**:
 
