@@ -9,9 +9,8 @@ from src.conversion.conversion_concurrency import (
 from src.conversion.ffmpeg_converter import VideoConverter
 from src.conversion.jxl_converter import JXLConverter
 from src.core.state_store import PipelineStateStore
-from src.helpers import is_image, scan_memory_files
+from src.helpers import handle_phase_keyboard_interrupt, is_image, scan_memory_files
 from src.logger import log
-from src.ui import StatsManager, UpdateUI
 
 
 class ConversionPhase:
@@ -19,31 +18,39 @@ class ConversionPhase:
         self,
         state_store: PipelineStateStore,
     ) -> None:
-        self.conversion_slots = ConversionSlots.from_options(Config.cli_options)
+        self.conversion_slots = ConversionSlots.from_options()
         self.state_store = state_store
 
     def run(self) -> None:
         media_files = scan_memory_files()
-        StatsManager.set_total_files(len(media_files))
-        if not media_files:
-            log("No media files left to convert.", "info")
+
+        if (
+            not Config.cli_options["convert_to_jxl"]
+            and Config.cli_options["video_codec"] != "av1"
+        ):
+            self._mark_conversion_skipped(media_files)
+            log("Conversion is disabled. Skipping.", "info")
             return
 
         media_files = self._filter_blocked_media(media_files)
         media_files = self._filter_resumable_media(media_files)
-        StatsManager.set_total_files(len(media_files))
+
         if not media_files:
             log("No media files eligible for conversion.", "info")
             return
 
-        max_workers = conversion_worker_capacity(Config.cli_options)
+        max_workers = conversion_worker_capacity()
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = self._submit_media(executor, media_files)
 
             try:
                 self._collect_results(futures)
             except KeyboardInterrupt:
-                self._handle_keyboard_interrupt(futures)
+                handle_phase_keyboard_interrupt(
+                    futures,
+                    self._collect_results,
+                    "conversion",
+                )
 
     def _submit_media(
         self,
@@ -63,23 +70,12 @@ class ConversionPhase:
             try:
                 future.result()
             except Exception as error:
-                StatsManager.record_failed()
                 self.state_store.mark_failed(file_path, "conversion", str(error))
                 log(
                     f"Unexpected failure processing '{file_path}': {error}",
                     "error",
                     "ERR",
                 )
-
-            StatsManager.record_processed()
-            UpdateUI().run()
-
-    def _handle_keyboard_interrupt(self, futures: dict[Future, Path]) -> None:
-        log("KeyboardInterrupt received. Finishing in-flight conversions...", "info")
-        UpdateUI().run("interrupted")
-        unfinished = {f: futures[f] for f in futures if not f.done()}
-        self._collect_results(unfinished)
-        log("All in-flight conversions finished. Exiting.", "info")
 
     def _process_media(self, file_path: Path) -> None:
         if is_image(file_path):
@@ -90,16 +86,26 @@ class ConversionPhase:
 
     def _process_image(self, file_path: Path) -> None:
         self.state_store.mark_running(file_path, "conversion")
-        if Config.cli_options["convert_to_jxl"]:
-            with self.conversion_slots.jxl:
-                output_path = JXLConverter(file_path).run()
-            self.state_store.mark_done(
+
+        if not Config.cli_options["convert_to_jxl"]:
+            self.state_store.mark_skipped(file_path, "conversion")
+            return
+
+        with self.conversion_slots.jxl:
+            output_path = JXLConverter(file_path).run()
+
+        if output_path is None:
+            self.state_store.mark_failed(
                 file_path,
                 "conversion",
+                "JXL conversion failed",
             )
-            self._mark_converted_output(file_path, output_path)
-        else:
-            self.state_store.mark_skipped(file_path, "conversion")
+            return
+
+        self.state_store.mark_done(file_path, "conversion")
+        self.state_store.mark_done(output_path, "conversion")
+        self._copy_terminal_state(file_path, output_path, "overlay")
+        self._copy_terminal_state(file_path, output_path, "metadata")
 
     def _process_video(self, file_path: Path) -> None:
         self.state_store.mark_running(file_path, "conversion")
@@ -135,16 +141,15 @@ class ConversionPhase:
         eligible = []
         for file_path in media_files:
             status = self.state_store.get_status(file_path, "conversion")
-            if self._should_skip_resumed_conversion(file_path, status):
-                self._log_resumed_conversion_skip(file_path, status)
+            if status:
+                log(
+                    f"Skipping conversion for '{file_path}' "
+                    f"because it is already {status}.",
+                    "info",
+                )
             else:
                 eligible.append(file_path)
         return eligible
-
-    def _mark_converted_output(self, input_path: Path, output_path: Path) -> None:
-        self.state_store.mark_done(output_path, "conversion")
-        self._copy_terminal_state(input_path, output_path, "overlay")
-        self._copy_terminal_state(input_path, output_path, "metadata")
 
     def _copy_terminal_state(
         self,
@@ -158,31 +163,6 @@ class ConversionPhase:
         elif status == "skipped":
             self.state_store.mark_skipped(output_path, stage)
 
-    def _should_skip_resumed_conversion(
-        self,
-        file_path: Path,
-        status: str,
-    ) -> bool:
-        if status in ("done", "failed"):
-            return True
-        return status == "skipped" and not self._conversion_enabled(file_path)
-
-    @staticmethod
-    def _log_resumed_conversion_skip(file_path: Path, status: str) -> None:
-        if status == "failed":
-            log(
-                f"Skipping conversion for '{file_path}' because it failed earlier.",
-                "warning",
-            )
-        else:
-            log(
-                f"Skipping conversion for '{file_path}' "
-                f"because it is already {status}.",
-                "info",
-            )
-
-    @staticmethod
-    def _conversion_enabled(file_path: Path) -> bool:
-        if is_image(file_path):
-            return Config.cli_options["convert_to_jxl"]
-        return Config.cli_options["video_codec"] == "av1"
+    def _mark_conversion_skipped(self, media_files: list[Path]) -> None:
+        for file_path in media_files:
+            self.state_store.mark_skipped(file_path, "conversion")
