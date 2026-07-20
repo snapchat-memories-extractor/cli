@@ -589,6 +589,40 @@ python main.py --ffmpeg-timeout 120
 </details>
 
 <details>
+<summary><b>JXL Effort: -je / --jxl-effort 1-10</b></summary>
+
+**What it does:**
+- Controls how hard the JPEG XL encoder works to reduce file size
+- **Range**: `1-10`
+- **Default**: `9`
+- Higher values are slower but can produce smaller `.jxl` files
+- Effort does not change image quality because JPEG-to-JXL conversion is lossless
+- Only relevant when `--jxl` is enabled
+
+**Examples**:
+
+Use the default archival setting:
+```bash
+python main.py --jxl
+```
+
+Use a faster but usually slightly larger conversion:
+```bash
+python main.py --jxl --jxl-effort 7
+```
+
+Use maximum effort:
+```bash
+python main.py --jxl -je 10
+```
+
+**Recommendations:**
+- `9` is the default because it matches the old bundled converter behavior
+- `7` is reasonable if speed matters more than squeezing out the last bytes
+
+</details>
+
+<details>
 <summary><b>JXL Timeout: -jt / --jxl-timeout SECONDS</b></summary>
 
 **What it does:**

@@ -25,6 +25,7 @@ def build_cli_options(args: argparse.Namespace) -> dict:
         "jpeg_quality": args.jpeg_quality,
         "logs_amount": args.logs_amount,
         "convert_to_jxl": args.jxl,
+        "jxl_effort": args.jxl_effort,
         "log_level": parse_log_level(args.log_level),
         "ffmpeg_timeout": args.ffmpeg_timeout,
         "video_codec": args.video_codec,

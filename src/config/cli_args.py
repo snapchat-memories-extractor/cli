@@ -215,6 +215,17 @@ def get_cli_args() -> argparse.Namespace:
             (default: keep original JPEG). Short: -J",
     )
     parser.add_argument(
+        "--jxl-effort",
+        "-je",
+        type=int,
+        choices=range(1, 11),
+        default=9,
+        metavar="1-10",
+        help="JPEG XL encoding effort 1-10 (default: 9). Higher values \
+            improve compression but are slower. Ignored unless --jxl is enabled. \
+            Short: -je",
+    )
+    parser.add_argument(
         "--video-codec",
         "-vc",
         type=str,
