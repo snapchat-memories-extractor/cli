@@ -38,8 +38,7 @@ and can be toggled independently.
 
 ## Prerequisites
 
-- **Python 3.10+**
-- **macOS only**: [Homebrew](https://brew.sh/) with `jpeg-xl` package
+- **Python 3.11+**
 
 ## Quick Start
 
@@ -90,21 +89,6 @@ source .venv/bin/activate
 ```bash
 pip install -r requirements.txt
 ```
-
-**macOS only – Install JPEG XL tools:**
-
-```bash
-brew install jpeg-xl
-```
-
-> **Note:** On macOS, the JPEG XL converter (`cjxl`) is installed via Homebrew. On Windows and Linux, pre-compiled binaries are included in the repository.
-
-**Linux only – Make the `cjxl` binary executable:**
-
-```bash
-chmod +x libjxl-binaries/linux/cjxl
-```
-
 
 ### Step 6: Run the Extractor
 
@@ -605,6 +589,27 @@ python main.py --ffmpeg-timeout 120
 </details>
 
 <details>
+<summary><b>JXL Timeout: -jt / --jxl-timeout SECONDS</b></summary>
+
+**What it does:**
+- Sets how many seconds the program will wait for JPEG XL conversion before giving up
+- **Default**: `120` seconds
+- Only relevant when `--jxl` is enabled
+
+**Examples**:
+
+Wait up to 300 seconds for each JPEG XL conversion:
+```bash
+python main.py -jt 300
+python main.py --jxl-timeout 300
+```
+
+**Recommendations:**
+- Increase for slow computers or very large images
+
+</details>
+
+<details>
 <summary><b>AV1 Constant Rate Factor: --av1-crf N</b></summary>
 
 **What it does:**
@@ -719,26 +724,6 @@ python main.py --log-level DEBUG
 
 </details>
 
-<details>
-<summary><b>CJXL Timeout: -ct / --cjxl-timeout SECONDS</b></summary>
-
-**What it does:**
-- Sets how many seconds the program will wait for the `cjxl` JPEG XL encoder to finish before giving up
-- **Default**: `120` seconds
-- Only relevant when `--jxl` is enabled
-
-**Examples**:
-
-Wait up to 300 seconds for each JPEG XL conversion:
-```bash
-python main.py -ct 300
-python main.py --cjxl-timeout 300
-```
-
-**Recommendations:**
-- Increase for slow computers or very large images
-
-</details>
 
 <details>
 <summary><b>Logs to Keep: -la / --logs-amount N</b></summary>
@@ -1143,4 +1128,4 @@ GPLv3 License — see [LICENSE](LICENSE) file.
 | Pillow | Image loading and overlay compositing | HPND | https://python-pillow.org/ |
 | piexif | Reading/writing EXIF metadata on JPEG files | MIT | https://github.com/hMatoba/Piexif |
 | imageio-ffmpeg | Bundled FFmpeg executable management | BSD-2-Clause | https://github.com/imageio/imageio-ffmpeg |
-| libjxl (`cjxl`) | JPEG XL lossless conversion | BSD-3-Clause | https://github.com/libjxl/libjxl |
+| pylibjxl | JPEG XL lossless conversion | BSD-3-Clause | https://pypi.org/project/pylibjxl/ |

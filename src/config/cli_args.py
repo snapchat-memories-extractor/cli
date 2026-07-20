@@ -369,11 +369,14 @@ def get_cli_args() -> argparse.Namespace:
             --crf / --constant-rate-factor.",
     )
     parser.add_argument(
-        "--cjxl-timeout",
-        "-ct",
+        "--jxl-timeout",
+        "-jt",
+        dest="jxl_timeout",
         type=int,
         default=120,
-        help="Timeout in seconds for cjxl conversion (default: 120). Short: -ct",
+        metavar="SECONDS",
+        help="Timeout in seconds for JXL conversion (default: 120). \
+            Short: -jt.",
     )
     parser.add_argument(
         "--logs-amount",

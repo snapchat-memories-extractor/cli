@@ -41,6 +41,6 @@ def build_cli_options(args: argparse.Namespace) -> dict:
         "film_grain": args.film_grain,
         "grain_denoise": args.grain_denoise,
         "av1_crf": args.av1_crf,
-        "cjxl_timeout": args.cjxl_timeout,
+        "jxl_timeout": args.jxl_timeout,
         "ffmpeg_preset": args.overlay_video_preset,
     }
