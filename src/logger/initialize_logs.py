@@ -1,13 +1,13 @@
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from src.config import Config
 from src.logger.formatter import JSONFormatter
 
 
-class LogInitializer:
-    def configure_logger(self) -> None:
+class InitializeLogs:
+    def __init__(self) -> None:
         logger = logging.getLogger()
         logger.setLevel(Config.cli_options["log_level"])
 
@@ -19,12 +19,12 @@ class LogInitializer:
     def _build_log_path(self) -> Path:
         return Path(Config.logs_folder) / self._create_log_filename()
 
+    def _create_log_filename(self) -> str:
+        return f"{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.jsonl"
+    
     @staticmethod
     def _ensure_log_dir(log_path: Path) -> None:
         log_path.parent.mkdir(parents=True, exist_ok=True)
-
-    def _create_log_filename(self) -> str:
-        return f"{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.jsonl"
 
     @staticmethod
     def _cleanup_old_logs() -> None:
