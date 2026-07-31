@@ -1,3 +1,5 @@
+"""Here CLI args become shared options, so remember to modify this file when creating / removing cli arguments."""
+
 import argparse
 
 from src.config.logging_config import parse_log_level
