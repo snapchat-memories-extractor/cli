@@ -2,7 +2,11 @@ from pathlib import Path
 
 from src.config.cli_args import get_cli_args
 from src.config.cli_options import build_cli_options
-from src.config.paths import ensure_directories
+
+
+def ensure_directories(output_folder: Path, logs_folder: Path) -> None:
+    output_folder.mkdir(parents=True, exist_ok=True)
+    logs_folder.mkdir(parents=True, exist_ok=True)
 
 
 class Config:
