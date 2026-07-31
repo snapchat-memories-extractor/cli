@@ -75,7 +75,15 @@ class MetadataPhase:
     def _handle_unmatched_media_files(self, media_files: list[Path]) -> None:
         for file_path in media_files:
             if Config.cli_options["strict_location"]:
-                file_path.unlink(missing_ok=True)
+                try:
+                    file_path.unlink(missing_ok=True)
+                except OSError as error:
+                    log(
+                        f"Failed to delete unmatched file '{file_path}': {error}",
+                        "error",
+                        "FILE",
+                    )
+                    raise
                 log(f"Deleted unmatched file for '{file_path.stem}' (--strict)", "info")
             self.state_store.mark_skipped(file_path, "metadata")
 

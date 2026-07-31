@@ -1,11 +1,20 @@
 from pathlib import Path
 
 from src.config import Config
+from src.logger import log
 
 
 def scan_memory_files() -> list[Path]:
-    return sorted(
-        path
-        for path in Config.memories_folder.iterdir()
-        if path.is_file()
-    )
+    try:
+        return sorted(
+            path
+            for path in Config.memories_folder.iterdir()
+            if path.is_file()
+        )
+    except OSError as error:
+        log(
+            f"Failed to scan memories folder at {Config.memories_folder}: {error}",
+            "error",
+            "SCAN",
+        )
+        raise

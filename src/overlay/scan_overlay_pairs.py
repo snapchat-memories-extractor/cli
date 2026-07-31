@@ -57,6 +57,7 @@ def _build_pairs(grouped: dict[str, dict[str, Path]]) -> list[OverlayPair]:
             log(
                 f"Found overlay file with no matching main for id "
                 f"'{media_id}': {overlay_path}. Skipping.",
-                "warning",
+                "error",
+                "PAIR",
             )
     return pairs

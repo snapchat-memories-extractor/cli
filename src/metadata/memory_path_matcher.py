@@ -3,6 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 from src.config import Config
+from src.logger import log
 from src.metadata.json_memory_loader import Memory
 from src.metadata.media_datetime_reader import MediaDatetimeReader
 
@@ -21,6 +22,11 @@ def match_memory_paths(
         memory = _take_matching_memory(captured_at, lookup)
 
         if memory is None:
+            log(
+                f"Could not match media file to JSON memory by datetime: {file_path}",
+                "error",
+                "MATCH",
+            )
             unmatched_files.append(file_path)
             continue
 
