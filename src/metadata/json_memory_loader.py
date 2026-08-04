@@ -73,7 +73,7 @@ def _parse_datetime(item: dict) -> datetime | None:
 
     try:
         return datetime.fromisoformat(timestamp).replace(
-            tzinfo=timezone.utc,
+            tzinfo=UTC,
             microsecond=0,
         )
     except ValueError:
