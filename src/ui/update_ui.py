@@ -4,8 +4,9 @@ from pathlib import Path
 from threading import RLock
 from time import time
 
+from src.config.defaults import DISPLAY_LINES
 from src.core.state_store import PipelineStage, PipelineStateStore
-from src.ui.display import DISPLAY_LINES, Display
+from src.ui.display import Display
 
 
 class UpdateUI:

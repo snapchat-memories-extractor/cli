@@ -2,12 +2,9 @@ from collections.abc import Iterable
 from pathlib import Path
 from time import time
 
+from src.config.defaults import DISPLAY_WIDTH, PROGRESS_BAR_WIDTH
 from src.core.state_store import PipelineStage, PipelineStateStore
 from src.core.state_store.schema import VALID_STAGES
-
-DISPLAY_WIDTH = 70
-DISPLAY_LINES = 8
-PROGRESS_BAR_WIDTH = 40
 
 # Just to make the display more readable
 PHASE_LABELS: dict[PipelineStage, str] = {
