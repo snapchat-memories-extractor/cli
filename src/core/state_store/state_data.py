@@ -45,18 +45,17 @@ def read_stage_state(
 
 
 def stages_for_item(files: dict[str, object], key: str) -> dict[str, object]:
-    item_state = files.setdefault(key, {"stages": {}})
+    item_state = files.get(key)
     if not isinstance(item_state, dict):
-        item_state = {"stages": {}}
+        item_state = {}
         files[key] = item_state
 
-    stages = item_state.setdefault("stages", {})
+    stages = item_state.get("stages")
     if not isinstance(stages, dict):
         stages = {}
         item_state["stages"] = stages
 
     return stages
-
 
 def stage_state_payload(stage_state: StageState) -> dict[str, object]:
     return {
