@@ -1,7 +1,7 @@
 from src.config import Config
 from src.conversion.conversion_phase import ConversionPhase
 from src.core.state_store import PipelineStateStore
-from src.helpers import scan_memory_files, overlay_phase_items
+from src.helpers import overlay_phase_items, scan_output_files
 from src.logger import log
 from src.metadata.metadata_phase import MetadataPhase
 from src.overlay.overlay_phase import OverlayPhase
@@ -18,13 +18,13 @@ class App:
         ui.set_phase("overlay", overlay_phase_items())
         OverlayPhase(state_store).run()
 
-        ui.set_phase("metadata", scan_memory_files())
+        ui.set_phase("metadata", scan_output_files())
         MetadataPhase(state_store).run()
 
-        ui.set_phase("conversion", scan_memory_files())
+        ui.set_phase("conversion", scan_output_files())
         ConversionPhase(state_store).run()
 
-        ui.run("finished", "conversion", scan_memory_files())
+        ui.run("finished", "conversion", scan_output_files())
         state_store.clear_skipped()
 
     @staticmethod
@@ -36,4 +36,3 @@ class App:
             state_store.reset_retryable()
 
         state_store.reset_running()
-

@@ -7,7 +7,7 @@ from src.helpers import (
     handle_phase_keyboard_interrupt,
     is_image,
     log_resumed_stage_skip,
-    scan_memory_files,
+    scan_output_files,
 )
 from src.logger import log
 from src.metadata.image_metadata_writer import ImageMetadataWriter
@@ -24,7 +24,7 @@ class MetadataPhase:
         self.state_store = state_store
 
     def run(self) -> None:
-        media_files = scan_memory_files()
+        media_files = scan_output_files()
 
         if not Config.cli_options["write_metadata"]:
             self._mark_metadata_skipped(media_files)

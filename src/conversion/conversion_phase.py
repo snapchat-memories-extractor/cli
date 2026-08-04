@@ -9,7 +9,7 @@ from src.conversion.conversion_concurrency import (
 from src.conversion.ffmpeg_converter import VideoConverter
 from src.conversion.jxl_converter import JXLConverter
 from src.core.state_store import PipelineStateStore
-from src.helpers import handle_phase_keyboard_interrupt, is_image, scan_memory_files
+from src.helpers import handle_phase_keyboard_interrupt, is_image, scan_output_files
 from src.logger import log
 
 
@@ -22,7 +22,7 @@ class ConversionPhase:
         self.state_store = state_store
 
     def run(self) -> None:
-        media_files = scan_memory_files()
+        media_files = scan_output_files()
 
         if (
             not Config.cli_options["convert_to_jxl"]

@@ -1,4 +1,6 @@
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
+from pathlib import Path
+from shutil import copy2
 
 from src.config import Config
 from src.core.state_store import PipelineStateStore, PipelineStatus
@@ -8,7 +10,7 @@ from src.helpers import (
     scan_memory_files,
 )
 from src.logger import log
-from src.overlay.overlay_job import run_overlay_job
+from src.overlay.overlay_job import overlay_output_path, run_overlay_job
 from src.overlay.scan_overlay_pairs import OverlayPair, scan_overlay_pairs
 
 
@@ -21,17 +23,15 @@ class OverlayPhase:
 
     def run(self) -> None:
         if Config.cli_options["overlay_mode"] == "off":
-            self._mark_all_main_overlays_skipped()
-            self._delete_all_overlays()
+            self._copy_all_main_files()
             log("Overlay phase skipped (--overlay-mode off).", "info")
             return
 
         pairs = scan_overlay_pairs()
-
-        # This should not happen, but just in case, delete any unpaired
-        # overlays before processing.
-        self._delete_unpaired_overlays(pairs)
-        self._mark_unpaired_main_overlays_skipped(pairs)
+        self._copy_existing_overlaid_files()
+        if Config.cli_options["overlay_mode"] == "both":
+            self._copy_all_main_files(mark_skipped=False)
+        self._copy_unpaired_main_files(pairs)
         # Filter out files that have already been processed in this stage
         pairs = self._filter_resumable_pairs(pairs)
 
@@ -85,10 +85,15 @@ class OverlayPhase:
         self.state_store.mark_running(pair.overlay_path, "overlay")
 
         output_path = run_overlay_job(pair)
+        copied_main_path = None
+        if Config.cli_options["overlay_mode"] == "both":
+            copied_main_path = self._copy_to_output(pair.main_path)
 
         self.state_store.mark_done(pair.main_path, "overlay")
         self.state_store.mark_done(pair.overlay_path, "overlay")
         self.state_store.mark_done(output_path, "overlay")
+        if copied_main_path is not None:
+            self.state_store.mark_done(copied_main_path, "overlay")
 
     def _filter_resumable_pairs(self, pairs: list[OverlayPair]) -> list[OverlayPair]:
         eligible = []
@@ -101,46 +106,40 @@ class OverlayPhase:
         return eligible
 
     def _terminal_overlay_status(self, pair: OverlayPair) -> PipelineStatus | None:
-        return (
+        status = (
             self.state_store.terminal_status(pair.main_path, "overlay")
             or self.state_store.terminal_status(pair.overlay_path, "overlay")
         )
+        if status == "done" and not overlay_output_path(pair).exists():
+            return None
+        return status
 
-    def _mark_all_main_overlays_skipped(self) -> None:
+    def _copy_all_main_files(self, *, mark_skipped: bool = True) -> None:
         for path in scan_memory_files():
             if path.stem.endswith("-main"):
-                self.state_store.mark_skipped(path, "overlay")
+                self._copy_to_output(path)
+                if mark_skipped:
+                    self.state_store.mark_skipped(path, "overlay")
 
-    def _mark_unpaired_main_overlays_skipped(self, pairs: list[OverlayPair]) -> None:
+    def _copy_unpaired_main_files(self, pairs: list[OverlayPair]) -> None:
         paired_mains = {pair.main_path for pair in pairs}
         for path in scan_memory_files():
             if path.stem.endswith("-main") and path not in paired_mains:
+                output_path = self._copy_to_output(path)
                 self.state_store.mark_skipped(path, "overlay")
+                self.state_store.mark_skipped(output_path, "overlay")
 
-    def _delete_unpaired_overlays(self, pairs: list[OverlayPair]) -> None:
-        paired_overlays = {pair.overlay_path for pair in pairs}
-        deleted = 0
-
+    def _copy_existing_overlaid_files(self) -> None:
         for path in scan_memory_files():
-            if (
-                path.stem.endswith("-overlay")
-                and path not in paired_overlays
-            ):
-                path.unlink()
-                deleted += 1
-
-        if deleted:
-            log(f"Deleted {deleted} unpaired overlay file(s).", "info")
+            if path.stem.endswith("-overlaid"):
+                output_path = self._copy_to_output(path)
+                self.state_store.mark_done(output_path, "overlay")
 
     @staticmethod
-    def _delete_all_overlays() -> None:
-        deleted = 0
-        for path in scan_memory_files():
-            if not path.stem.endswith("-overlay"):
-                continue
+    def _copy_to_output(path: Path) -> Path:
+        Config.output_folder.mkdir(parents=True, exist_ok=True)
+        output_path = Config.output_folder / path.name
 
-            path.unlink()
-            deleted += 1
-
-        if deleted:
-            log(f"Deleted {deleted} overlay file(s).", "info")
+        if path.resolve() != output_path.resolve():
+            copy2(path, output_path)
+        return output_path
