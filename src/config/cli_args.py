@@ -32,7 +32,7 @@ def get_cli_args() -> argparse.Namespace:
         metavar="PATH",
         help=(
             "Custom output directory for processed files "
-            "(default: ./downloads). Short: -o"
+            "(default: ./output). Short: -o"
         ),
     )
     parser.add_argument(

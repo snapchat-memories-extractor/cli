@@ -42,7 +42,7 @@ class Config:
     def _get_output_folder(cls) -> Path:
         if cls.cli_options["output"]:
             return Path(cls.cli_options["output"])
-        return Path("downloads")
+        return Path("output")
 
     @classmethod
     def _get_logs_folder(cls) -> Path:

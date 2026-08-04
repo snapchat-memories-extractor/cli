@@ -102,7 +102,7 @@ Or specify both paths directly:
 python main.py --memories-json /path/to/memories_history.json --memories-folder /path/to/memories
 ```
 
-**Done!** Your files will be saved to `downloads/`
+**Done!** Your files will be saved to `output/`
 
 ## Configuration
 
@@ -172,12 +172,12 @@ python main.py --memories-folder C:\Users\user\Downloads\memories
 
 **What it does:**
 - Sets a custom output directory for all processed files
-- **Default**: `downloads/` (relative to the project root)
+- **Default**: `output/` (relative to the project root)
 - The directory will be created automatically if it doesn't exist
 
 **Examples**:
 
-Use default output directory (`downloads/`):
+Use default output directory (`output/`):
 ```bash
 python main.py
 ```
