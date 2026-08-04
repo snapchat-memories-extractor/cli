@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from src.logger.error_descriptions import ERROR_DESCRIPTIONS
 
@@ -20,7 +20,7 @@ class JSONFormatter(logging.Formatter):
     @staticmethod
     def _get_base_log(record: logging.LogRecord) -> dict:
         return {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "level": record.levelname,
             "message": record.getMessage(),
         }

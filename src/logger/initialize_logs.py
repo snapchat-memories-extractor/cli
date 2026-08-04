@@ -4,12 +4,14 @@ from pathlib import Path
 
 from src.config import Config
 from src.logger.formatter import JSONFormatter
+from src.logger.log import APP_LOGGER_NAME
 
 
 class InitializeLogs:
     def __init__(self) -> None:
-        logger = logging.getLogger()
+        logger = logging.getLogger(APP_LOGGER_NAME)
         logger.setLevel(Config.cli_options["log_level"])
+        logger.propagate = False
 
         log_path = self._build_log_path()
         self._ensure_log_dir(log_path)
@@ -21,7 +23,7 @@ class InitializeLogs:
 
     def _create_log_filename(self) -> str:
         return f"{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.jsonl"
-    
+
     @staticmethod
     def _ensure_log_dir(log_path: Path) -> None:
         log_path.parent.mkdir(parents=True, exist_ok=True)
