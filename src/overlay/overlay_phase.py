@@ -10,7 +10,6 @@ from src.helpers import (
 from src.logger import log
 from src.overlay.overlay_job import run_overlay_job
 from src.overlay.scan_overlay_pairs import OverlayPair, scan_overlay_pairs
-from src.ui import StatsManager
 
 
 class OverlayPhase:
@@ -70,7 +69,6 @@ class OverlayPhase:
             try:
                 future.result()
             except Exception as error:
-                StatsManager.record_failed()
                 self.state_store.mark_failed(pair.main_path, "overlay", str(error))
                 self.state_store.mark_failed(pair.overlay_path, "overlay", str(error))
                 log(

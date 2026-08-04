@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+from collections.abc import Callable, Iterable
 from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
@@ -16,16 +17,21 @@ from src.core.state_store.schema import (
     VALID_STATUSES,
     PipelineStage,
     PipelineStatus,
+    StageProgress,
     StageState,
 )
 from src.logger import log
 
 
 class PipelineStateStore:
-    def __init__(self) -> None:
+    def __init__(self, on_change: Callable[[], None] | None = None) -> None:
         self.path = self._default_path()
         self._lock = RLock()
         self._state = self._load()
+        self._on_change = on_change
+
+    def set_on_change(self, on_change: Callable[[], None] | None) -> None:
+        self._on_change = on_change
 
     def get_status(self, item: Path, stage: PipelineStage) -> PipelineStatus:
         stage = self._normalize_stage(stage)
@@ -36,6 +42,37 @@ class PipelineStateStore:
 
         with self._lock:
             return self._read_stage_state_locked(key, stage).status
+
+    def summarize_stage(
+        self,
+        items: Iterable[Path],
+        stage: PipelineStage,
+    ) -> StageProgress:
+        stage = self._normalize_stage(stage)
+        if stage is None:
+            return StageProgress("overlay", 0)
+
+        item_names = {item.name for item in items}
+
+        with self._lock:
+            statuses = [
+                self._read_stage_state_locked(item_name, stage).status
+                for item_name in item_names
+            ]
+
+        counts = dict.fromkeys(VALID_STATUSES, 0)
+        for status in statuses:
+            counts[status] += 1
+
+        return StageProgress(
+            stage=stage,
+            total=len(item_names),
+            pending=counts["pending"],
+            running=counts["running"],
+            done=counts["done"],
+            failed=counts["failed"],
+            skipped=counts["skipped"],
+        )
 
     def have_stage_failed(
         self,
@@ -142,13 +179,16 @@ class PipelineStateStore:
             if current.status in ("done", "failed"):
                 return current
 
-            return self._write_stage_state_locked(
+            updated = self._write_stage_state_locked(
                 key,
                 stage,
                 "skipped",
                 increment_attempts=False,
                 last_error=None,
             )
+
+        self._notify_change()
+        return updated
 
     def mark_failed(
         self,
@@ -164,13 +204,16 @@ class PipelineStateStore:
 
         with self._lock:
             current = self._read_stage_state_locked(key, stage)
-            return self._write_stage_state_locked(
+            updated = self._write_stage_state_locked(
                 key,
                 stage,
                 "failed",
                 increment_attempts=current.status != "running",
                 last_error=error,
             )
+
+        self._notify_change()
+        return updated
 
     def delete(self) -> None:
         deleted = False
@@ -186,6 +229,7 @@ class PipelineStateStore:
 
         with self._lock:
             self._state = self._empty_state()
+        self._notify_change()
 
     def _write_stage_state(
         self,
@@ -204,13 +248,15 @@ class PipelineStateStore:
         key = item.name
 
         with self._lock:
-            return self._write_stage_state_locked(
+            updated = self._write_stage_state_locked(
                 key,
                 stage,
                 status,
                 increment_attempts=increment_attempts,
                 last_error=last_error,
             )
+        self._notify_change()
+        return updated
 
     def _write_stage_state_locked(
         self,
@@ -354,6 +400,10 @@ class PipelineStateStore:
 
         if not saved:
             log(f"Could not save pipeline state file: {self.path}", "warning")
+
+    def _notify_change(self) -> None:
+        if self._on_change is not None:
+            self._on_change()
 
     @staticmethod
     def _empty_state() -> dict[str, object]:

@@ -18,3 +18,6 @@ def scan_memory_files() -> list[Path]:
             "SCAN",
         )
         raise
+
+def overlay_phase_items() -> list[Path]:
+        return [path for path in scan_memory_files() if path.stem.endswith("-main")]
