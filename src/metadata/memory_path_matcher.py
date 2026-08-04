@@ -46,7 +46,7 @@ def _build_memory_lookup(memories: list[Memory]) -> dict[datetime, list[Memory]]
 def _read_media_datetimes(
     media_files: list[Path],
 ) -> dict[Path, datetime | None]:
-    max_workers = Config.cli_options["gps_reader_concurrency"]
+    max_workers = Config.cli_options["gps_writer_concurrency"]
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         captured_at_values = executor.map(
             lambda file_path: MediaDatetimeReader(file_path).run(),
