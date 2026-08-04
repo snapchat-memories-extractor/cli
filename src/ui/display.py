@@ -4,7 +4,6 @@ from time import time
 
 from src.core.state_store import PipelineStage, PipelineStateStore
 from src.core.state_store.schema import VALID_STAGES
-from src.ui.generate_progress_bar import GenerateProgressBar
 
 DISPLAY_WIDTH = 70
 DISPLAY_LINES = 8
@@ -30,11 +29,11 @@ class Display:
         self.progress = state_store.summarize_stage(items, stage)
         self.phase_index = VALID_STAGES.index(stage) + 1
         self.elapsed_time = max(0, int(time() - started_at))
-        self.progress_bar = GenerateProgressBar(
+        self.progress_bar = self._generate_progress_bar(
             self.progress.terminal,
             self.progress.total,
             bar_length=PROGRESS_BAR_WIDTH,
-        ).run()
+        )
         self.eta = self._calculate_eta(
             self.progress.terminal,
             self.elapsed_time,
@@ -122,6 +121,31 @@ class Display:
         if seconds < 3600:
             return f"{seconds // 60:.0f}m {seconds % 60:.0f}s"
         return f"{seconds // 3600:.0f}h {(seconds % 3600) // 60:.0f}m"
+
+    @staticmethod
+    def _generate_progress_bar(
+        current: int,
+        total: int,
+        bar_length: int = PROGRESS_BAR_WIDTH,
+    ) -> str:
+        filled_bar_length = Display._calculate_progress_bar_length(
+            current,
+            total,
+            bar_length,
+        )
+        return "#" * filled_bar_length + "-" * (bar_length - filled_bar_length)
+
+    @staticmethod
+    def _calculate_progress_bar_length(
+        current: int,
+        total: int,
+        bar_length: int,
+    ) -> int:
+        if total == 0:
+            return bar_length
+
+        progress = min(1.0, max(0.0, current / total))
+        return int(bar_length * progress)
 
     @staticmethod
     def _padding_line(content: str, total_width: int = DISPLAY_WIDTH) -> str:
