@@ -28,6 +28,7 @@ and can be toggled independently.
 ## Features
 
 - **Local-first** — works entirely from an export already sitting on disk; no download links, no expired links, no network access at all
+- **Input-safe by default** - your original export files are read, not rewritten or deleted; fail-fast checks refuse an output directory inside the memories folder
 - **Overlay merging** — applies caption, sticker, and drawing layers from `<id>-overlay` files onto photos and videos.
 - **Metadata embedding** — writes GPS into images and videos
 - **Image conversion** — JPEG → JPEG XL, lossless, 20-40% smaller
@@ -327,7 +328,7 @@ python main.py --video-codec av1 --av1-converter-concurrency 2
 - **`on` (default)**: Writes composited `<id>-overlaid.<ext>` files to the output directory. Main files without overlays are copied through unchanged.
 - **`both`**: Writes composited `<id>-overlaid.<ext>` files and clean `<id>-main.<ext>` copies to the output directory.
 - **`off`**: Copies clean `<id>-main.<ext>` files to the output directory and ignores overlay source files.
-- The input memories folder is left untouched.
+- The input memories folder is left untouched; the app refuses output paths inside it.
 
 **Examples**:
 
