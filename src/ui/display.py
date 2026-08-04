@@ -4,13 +4,13 @@ from time import time
 
 from src.core.state_store import PipelineStage, PipelineStateStore
 from src.core.state_store.schema import VALID_STAGES
-from src.ui.format_time import format_time
 from src.ui.generate_progress_bar import GenerateProgressBar
 
 DISPLAY_WIDTH = 70
 DISPLAY_LINES = 8
 PROGRESS_BAR_WIDTH = 40
 
+# Just to make the display more readable
 PHASE_LABELS: dict[PipelineStage, str] = {
     "overlay": "Overlay",
     "metadata": "Metadata",
@@ -81,7 +81,7 @@ class Display:
 
         avg_time = elapsed_time / current
         eta = avg_time * remaining
-        return format_time(eta)
+        return Display._format_time(eta)
 
     @staticmethod
     def _get_loading_display_lines() -> tuple[str, str]:
@@ -111,9 +111,17 @@ class Display:
     def _get_summary_line(self) -> str:
         return (
             f"  Items {self.progress.terminal}/{self.progress.total} | "
-            f"Elapsed {format_time(self.elapsed_time):>10} | "
+            f"Elapsed {self._format_time(self.elapsed_time):>10} | "
             f"ETA {self.eta:>10}"
         )
+
+    @staticmethod
+    def _format_time(seconds: float) -> str:
+        if seconds < 60:
+            return f"{seconds:.0f}s"
+        if seconds < 3600:
+            return f"{seconds // 60:.0f}m {seconds % 60:.0f}s"
+        return f"{seconds // 3600:.0f}h {(seconds % 3600) // 60:.0f}m"
 
     @staticmethod
     def _padding_line(content: str, total_width: int = DISPLAY_WIDTH) -> str:
