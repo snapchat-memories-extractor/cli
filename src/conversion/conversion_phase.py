@@ -8,7 +8,7 @@ from src.conversion.conversion_concurrency import (
 )
 from src.conversion.ffmpeg_converter import VideoConverter
 from src.conversion.jxl_converter import JXLConverter
-from src.core.state_store import PipelineStateStore
+from src.core.state_store import PipelineStage, StateStore
 from src.helpers import handle_phase_keyboard_interrupt, is_image, scan_output_files
 from src.logger import log
 
@@ -16,7 +16,7 @@ from src.logger import log
 class ConversionPhase:
     def __init__(
         self,
-        state_store: PipelineStateStore,
+        state_store: StateStore,
     ) -> None:
         self.conversion_slots = ConversionSlots.from_options()
         self.state_store = state_store
@@ -155,7 +155,7 @@ class ConversionPhase:
         self,
         input_path: Path,
         output_path: Path,
-        stage: str,
+        stage: PipelineStage,
     ) -> None:
         status = self.state_store.terminal_status(input_path, stage)
         if status == "done":

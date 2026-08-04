@@ -3,7 +3,7 @@ from pathlib import Path
 from shutil import copy2
 
 from src.config import Config
-from src.core.state_store import PipelineStateStore, PipelineStatus
+from src.core.state_store import PipelineStatus, StateStore
 from src.helpers import (
     handle_phase_keyboard_interrupt,
     log_resumed_stage_skip,
@@ -17,7 +17,7 @@ from src.overlay.scan_overlay_pairs import OverlayPair, scan_overlay_pairs
 class OverlayPhase:
     def __init__(
         self,
-        state_store: PipelineStateStore,
+        state_store: StateStore,
     ) -> None:
         self.state_store = state_store
 

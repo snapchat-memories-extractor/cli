@@ -5,14 +5,14 @@ from threading import RLock
 from time import time
 
 from src.config.defaults import DISPLAY_LINES
-from src.core.state_store import PipelineStage, PipelineStateStore
+from src.core.state_store import PipelineStage, StateStore
 from src.ui.display import Display
 
 
 class UpdateUI:
     def __init__(
         self,
-        state_store: PipelineStateStore,
+        state_store: StateStore,
         started_at: float | None = None,
     ) -> None:
         self.state_store = state_store

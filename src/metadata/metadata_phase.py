@@ -2,7 +2,7 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from src.config import Config
-from src.core.state_store import PipelineStateStore
+from src.core.state_store import StateStore
 from src.helpers import (
     handle_phase_keyboard_interrupt,
     is_image,
@@ -19,7 +19,7 @@ from src.metadata.video_metadata_writer import VideoMetadataWriter
 class MetadataPhase:
     def __init__(
         self,
-        state_store: PipelineStateStore,
+        state_store: StateStore,
     ) -> None:
         self.state_store = state_store
 

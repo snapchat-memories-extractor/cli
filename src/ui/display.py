@@ -3,8 +3,7 @@ from pathlib import Path
 from time import time
 
 from src.config.defaults import DISPLAY_WIDTH, PROGRESS_BAR_WIDTH
-from src.core.state_store import PipelineStage, PipelineStateStore
-from src.core.state_store.schema import VALID_STAGES
+from src.core.state_store import VALID_STAGES, PipelineStage, StateStore
 
 # Just to make the display more readable
 PHASE_LABELS: dict[PipelineStage, str] = {
@@ -17,7 +16,7 @@ PHASE_LABELS: dict[PipelineStage, str] = {
 class Display:
     def __init__(
         self,
-        state_store: PipelineStateStore,
+        state_store: StateStore,
         stage: PipelineStage,
         items: Iterable[Path],
         started_at: float,
