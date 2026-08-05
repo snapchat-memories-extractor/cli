@@ -10,6 +10,7 @@ from src.helpers import (
     scan_memory_files,
 )
 from src.logger import log
+from src.logger.phase_stats import PhaseStats
 from src.overlay.overlay_job import overlay_output_path, run_overlay_job
 from src.overlay.scan_overlay_pairs import OverlayPair, scan_overlay_pairs
 
@@ -20,38 +21,48 @@ class OverlayPhase:
         state_store: StateStore,
     ) -> None:
         self.state_store = state_store
+        self.stats = PhaseStats("overlay")
 
     def run(self) -> None:
-        if Config.cli_options["overlay_mode"] == "off":
-            self._copy_all_main_files()
-            log("Overlay phase skipped (--overlay-mode off).", "info")
-            return
-
-        pairs = scan_overlay_pairs()
-        self._copy_existing_overlaid_files()
-        if Config.cli_options["overlay_mode"] == "both":
-            self._copy_all_main_files(mark_skipped=False)
-        self._copy_unpaired_main_files(pairs)
-        # Filter out files that have already been processed in this stage
-        pairs = self._filter_resumable_pairs(pairs)
-
-        if not pairs:
-            log("No overlay pairs found to process.", "info")
-            return
-
-        with ThreadPoolExecutor(
-            max_workers=Config.cli_options["overlay_applier_concurrency"]
-        ) as executor:
-            futures = self._submit_pairs(executor, pairs)
-
-            try:
-                self._collect_results(futures)
-            except KeyboardInterrupt:
-                handle_phase_keyboard_interrupt(
-                    futures,
-                    self._collect_results,
-                    "overlays",
+        self.stats = PhaseStats("overlay")
+        log("Starting overlay phase.", "info")
+        try:
+            if Config.cli_options["overlay_mode"] == "off":
+                self._copy_all_main_files(
+                    skip_reason="overlay mode is off",
+                    log_skipped_items=False,
                 )
+                log("Overlay phase skipped (--overlay-mode off).", "info")
+                return
+
+            pairs = scan_overlay_pairs()
+            self._copy_existing_overlaid_files()
+            if Config.cli_options["overlay_mode"] == "both":
+                self._copy_all_main_files(mark_skipped=False)
+            self._copy_unpaired_main_files(pairs)
+            # Filter out files that have already been processed in this stage
+            pairs = self._filter_resumable_pairs(pairs)
+
+            if not pairs:
+                log("No overlay pairs found to process.", "info")
+                return
+
+            with ThreadPoolExecutor(
+                max_workers=Config.cli_options["overlay_applier_concurrency"]
+            ) as executor:
+                futures = self._submit_pairs(executor, pairs)
+
+                try:
+                    self._collect_results(futures)
+                except KeyboardInterrupt:
+                    handle_phase_keyboard_interrupt(
+                        futures,
+                        self._collect_results,
+                        "overlays",
+                    )
+        finally:
+            self.stats.log_summary()
+            log("Finished overlay phase.", "info")
 
     def _submit_pairs(
         self,
@@ -71,6 +82,8 @@ class OverlayPhase:
             except Exception as error:
                 self.state_store.mark_failed(pair.main_path, "overlay", str(error))
                 self.state_store.mark_failed(pair.overlay_path, "overlay", str(error))
+                self.stats.mark("failed", pair.main_path)
+                self.stats.mark("failed", pair.overlay_path)
                 log(
                     f"Overlay stage failed for '{pair.media_id}': {error}",
                     "error",
@@ -92,6 +105,8 @@ class OverlayPhase:
         self.state_store.mark_done(pair.main_path, "overlay")
         self.state_store.mark_done(pair.overlay_path, "overlay")
         self.state_store.mark_done(output_path, "overlay")
+        self.stats.mark("done", pair.main_path)
+        self.stats.mark("done", pair.overlay_path)
         if copied_main_path is not None:
             self.state_store.mark_done(copied_main_path, "overlay")
 
@@ -101,6 +116,9 @@ class OverlayPhase:
             status = self._terminal_overlay_status(pair)
             if status:
                 log_resumed_stage_skip("overlay", pair.media_id, status)
+                reason = _terminal_status_skip_reason(status)
+                self.stats.mark("skipped", pair.main_path, reason)
+                self.stats.mark("skipped", pair.overlay_path, reason)
             else:
                 eligible.append(pair)
         return eligible
@@ -114,12 +132,24 @@ class OverlayPhase:
             return None
         return status
 
-    def _copy_all_main_files(self, *, mark_skipped: bool = True) -> None:
+    def _copy_all_main_files(
+        self,
+        *,
+        mark_skipped: bool = True,
+        skip_reason: str = "main file was copied without overlay processing",
+        log_skipped_items: bool = True,
+    ) -> None:
         for path in scan_memory_files():
             if path.stem.endswith("-main"):
                 self._copy_to_output(path)
                 if mark_skipped:
                     self.state_store.mark_skipped(path, "overlay")
+                    self.stats.mark(
+                        "skipped",
+                        path,
+                        skip_reason,
+                        log_item=log_skipped_items,
+                    )
 
     def _copy_unpaired_main_files(self, pairs: list[OverlayPair]) -> None:
         paired_mains = {pair.main_path for pair in pairs}
@@ -128,12 +158,15 @@ class OverlayPhase:
                 output_path = self._copy_to_output(path)
                 self.state_store.mark_skipped(path, "overlay")
                 self.state_store.mark_skipped(output_path, "overlay")
+                reason = "no matching overlay file was found"
+                self.stats.mark("skipped", path, reason)
 
     def _copy_existing_overlaid_files(self) -> None:
         for path in scan_memory_files():
             if path.stem.endswith("-overlaid"):
                 output_path = self._copy_to_output(path)
                 self.state_store.mark_done(output_path, "overlay")
+                self.stats.mark("done", path)
 
     @staticmethod
     def _copy_to_output(path: Path) -> Path:
@@ -143,3 +176,9 @@ class OverlayPhase:
         if path.resolve() != output_path.resolve():
             copy2(path, output_path)
         return output_path
+
+
+def _terminal_status_skip_reason(status: PipelineStatus) -> str:
+    if status == "failed":
+        return "it failed earlier"
+    return f"it is already {status}"
