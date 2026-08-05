@@ -1,4 +1,4 @@
-from datetime import timezone
+from datetime import UTC
 
 import piexif
 from PIL import Image
@@ -20,7 +20,7 @@ class ImageMetadataWriter:
         self._save_image_with_exif()
 
     def _set_datetime_fields(self) -> None:
-        captured_at = self.memory.captured_at.astimezone(timezone.utc)
+        captured_at = self.memory.captured_at.astimezone(UTC)
         datetime_bytes = captured_at.strftime("%Y:%m:%d %H:%M:%S").encode("ascii")
         exif = self.exif_metadata["Exif"]
         zeroth = self.exif_metadata["0th"]
@@ -71,4 +71,4 @@ class ImageMetadataWriter:
         quality = Config.cli_options["jpeg_quality"]
 
         with Image.open(self.file_path) as image:
-            image.save(str(self.file_path), quality, exif_data_bytes)
+            image.save(str(self.file_path), quality=quality, exif=exif_data_bytes)
