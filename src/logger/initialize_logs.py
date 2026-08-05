@@ -1,5 +1,5 @@
 import logging
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 
 from src.config import Config
@@ -22,7 +22,7 @@ class InitializeLogs:
         return Path(Config.logs_folder) / self._create_log_filename()
 
     def _create_log_filename(self) -> str:
-        return f"{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.jsonl"
+        return f"{datetime.now().astimezone().strftime('%Y%m%d_%H%M%S')}.jsonl"
 
     @staticmethod
     def _ensure_log_dir(log_path: Path) -> None:
