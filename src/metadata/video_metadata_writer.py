@@ -47,6 +47,9 @@ class VideoMetadataWriter:
     def _ffmpeg_metadata_arguments(self) -> list[str]:
         meta_args = []
 
+        if self.memory.location_coords is None:
+            return meta_args
+
         latitude, longitude = self.memory.location_coords
         iso6709 = self._to_iso6709(latitude, longitude)
         self._extend_meta_args(meta_args, latitude, longitude, iso6709)

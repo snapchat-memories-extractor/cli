@@ -30,6 +30,9 @@ class ImageMetadataWriter:
         zeroth[piexif.ImageIFD.DateTime] = datetime_bytes
 
     def _set_gps_fields(self) -> None:
+        if self.memory.location_coords is None:
+            return
+
         latitude, longitude = self.memory.location_coords
         gps = self.exif_metadata["GPS"]
         latitude_dms = self._decimal_to_dms(latitude)

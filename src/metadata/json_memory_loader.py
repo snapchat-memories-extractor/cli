@@ -12,7 +12,7 @@ Coordinates = tuple[float, float]
 
 class Memory(BaseModel):
     captured_at: datetime
-    location_coords: Coordinates
+    location_coords: Coordinates | None
     file_path: Path | None = None
 
 
@@ -24,11 +24,11 @@ def load_json_memories() -> list[Memory]:
     for item in raw_items:
         coordinates = _parse_location(item)
         captured_at = _parse_datetime(item)
-        if coordinates is not None and captured_at is not None:
+        if captured_at is not None:
             memories.append(
                 Memory(captured_at=captured_at, location_coords=coordinates)
             )
-        elif coordinates is None:
+        if coordinates is None:
             _log_missing_location(item)
 
     return memories
