@@ -54,7 +54,7 @@ and can be toggled independently.
 
 ```bash
 git clone https://github.com/snapchat-memories-extractor/cli.git
-cd snapchat-memories-extractor
+cd cli
 ```
 
 
