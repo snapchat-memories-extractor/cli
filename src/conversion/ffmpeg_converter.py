@@ -14,9 +14,16 @@ class VideoConverter:
     def run(self) -> Path:
         temp_path = self.file_path.with_suffix(".tmp" + self.file_path.suffix)
         command = self._build_ffmpeg_command(temp_path)
+        timeout = Config.cli_options["ffmpeg_timeout"]
 
         try:
-            subprocess.run(command, check=True)
+            subprocess.run(
+                command,
+                check=True,
+                timeout=timeout,
+                capture_output=True,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
             temp_path.unlink(missing_ok=True)
             log(
