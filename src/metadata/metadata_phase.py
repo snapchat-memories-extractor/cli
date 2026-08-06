@@ -61,7 +61,9 @@ class MetadataPhase:
                 log("No media files matched metadata.", "info")
                 return
 
-            with ThreadPoolExecutor() as executor:
+            with ThreadPoolExecutor(
+                max_workers=Config.cli_options["gps_writer_concurrency"]
+            ) as executor:
                 futures = self._submit_memories(executor, memories)
 
                 try:
