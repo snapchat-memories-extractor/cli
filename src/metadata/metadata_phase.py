@@ -128,6 +128,12 @@ class MetadataPhase:
                 )
 
     def _apply_metadata(self, memory: Memory, file_path: Path) -> bool:
+        if Config.cli_options["strict_location"] and memory.location_coords is None:
+            file_path.unlink(missing_ok=True)
+            self.state_store.mark_skipped(file_path, "metadata")
+            self.stats.mark("skipped", file_path, "it had no location data")
+            return False
+
         self._write_metadata(memory, file_path)
         self.state_store.mark_done(file_path, "metadata")
         self.stats.mark("done", file_path)
