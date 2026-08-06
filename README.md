@@ -409,13 +409,15 @@ python main.py --overlay-video-pixel-format yuv420p10le
 <summary><b>Strict Location: -s / --strict</b></summary>
 
 **What it does:**
-- By default, a file that doesn't have location entry in JSON is left
-  untouched on disk (no metadata written)
-- With `--strict`, files without location entry are **permanently deleted** instead
+- By default, files without a usable location entry in JSON are kept
+- Matched images without GPS still get captured date/time EXIF
+- Matched videos only get GPS metadata when GPS is available
+- With `--strict`, output files without location data are **permanently deleted**
+  instead
 
 **Examples**:
 
-Default - files without location are left alone:
+Default - files without location are kept:
 ```bash
 python main.py
 ```
@@ -562,7 +564,7 @@ python main.py --video-codec av1
 
 ### Advanced Options
 
-> **Note:** Videos without overlays are left alone unless `--video-codec av1` is enabled. Videos with overlays are encoded during overlay using `libx264`, `--overlay-video-crf`, and `--overlay-video-preset`; metadata writing uses stream copy and does not re-encode video. Final conversion flags such as `--av1-crf`, `--ffmpeg-pixel-format`, every `--av1-*` flag, `--film-grain`, and `--grain-denoise` only affect the conversion stage. JPEGs that skip overlay, metadata writing, and JXL conversion are left byte-identical. JPEGs written by overlay or metadata use `--jpeg-quality`.
+> **Note:** Videos without overlays are left alone unless metadata writing or `--video-codec av1` is enabled. Videos with overlays are encoded during overlay using `libx264`, `--overlay-video-crf`, and `--overlay-video-preset`; video metadata writing uses stream copy and does not re-encode video. Final conversion flags such as `--av1-crf`, `--ffmpeg-pixel-format`, every `--av1-*` flag, `--film-grain`, and `--grain-denoise` only affect the conversion stage. JPEGs that skip overlay, metadata writing, and JXL conversion are left byte-identical. JPEGs written by overlay or metadata use `--jpeg-quality`.
 
 <details>
 <summary><b>FFmpeg Timeout: -f / --ffmpeg-timeout SECONDS</b></summary>
