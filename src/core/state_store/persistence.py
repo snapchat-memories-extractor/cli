@@ -22,7 +22,6 @@ def default_state_path() -> Path:
     source_path = os.path.normcase(str(source_folder.expanduser().absolute())) # Get string of absolute path
     source_key = hashlib.sha256(source_path.encode("utf-8")).hexdigest()[:16] # Use first 16 chars of SHA256 hash of path as key
     state_dir = project_root / APP_STATE_DIR # Get the state directory relative to this file
-
     return state_dir / f"{PIPELINE_STATE_FILE_PREFIX}-{source_key}.json"
 
 
@@ -65,17 +64,14 @@ def load_state(path: Path) -> dict[str, object]:
 
 def save_state(path: Path, state: dict[str, object]) -> None:
     temp_path = path.with_name(f"{path.name}.tmp")
-    saved = False
 
-    with suppress(OSError, TypeError):
+    try:
         path.parent.mkdir(parents=True, exist_ok=True)
         serialized = json.dumps(state, indent=2, sort_keys=True)
         temp_path.write_text(f"{serialized}\n", encoding="utf-8")
         temp_path.replace(path)
-        saved = True
-
-    if not saved:
-        log(f"Could not save pipeline state file: {path}", "warning")
+    except (OSError, TypeError) as error:
+        log(f"Could not save pipeline state file {path}: {error}", "warning")
 
 
 def delete_state_file(path: Path) -> None:
