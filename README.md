@@ -11,9 +11,9 @@ one merged image or video: a `-main` file (the original photo/video) and a
 transparent PNG layer).
 
 This tool bridges that gap entirely offline: it pairs up `-main`/`-overlay`
-files, merges the overlay into the media, matches each pair back to its
-entry in the export JSON by embedded capture date, and embeds the correct
-location straight into each photo and video. For anyone who wants
+files, merges the overlay into the media, matches each file back to its
+same-day export JSON entry by the `YYYY-MM-DD` filename prefix and file
+modified-time order, and embeds the correct location straight into each photo and video. For anyone who wants
 smaller files, it also supports re-encoding into JPEG XL and AV1, which cut
 file size by 20-40% and 30-50% respectively with no visible quality loss.
 
