@@ -1,4 +1,4 @@
-"""Here CLI args become shared options, so remember to modify this file when creating / removing cli arguments."""
+"""Build shared option values from CLI args."""
 
 import argparse
 

@@ -1,5 +1,8 @@
 ERROR_DESCRIPTIONS = {
-    "MISS": "Problem with 'memories_history.json', input or output folder location. Check paths",
+    "MISS": (
+        "Problem with 'memories_history.json', input or output folder location. "
+        "Check paths"
+    ),
     "FILE": "File processing error - Failed to write/read file",
     "LOC": "Json entry has no usable location - filtered out before matching",
     "ERR": "Unexpected error",

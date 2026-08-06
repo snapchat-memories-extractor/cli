@@ -91,6 +91,11 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+For local development tools:
+```bash
+pip install -r requirements-dev.txt
+```
+
 ### Step 6: Run the Extractor
 
 If you moved both `memories_history.json` and your memories folder into `/data`:
@@ -1103,7 +1108,7 @@ AV1 encoding is significantly more CPU-intensive than h264. Try the following to
 <details>
 <summary><b>Still Having Issues?</b></summary>
 
-Please open a new [issue](https://github.com/Reelinq/snapchat-memories-extractor/issues) with the following information:
+Please open a new [issue](https://github.com/snapchat-memories-extractor/cli/issues) with the following information:
 - Your Python version (`python --version`)
 - Operating system
 - Error message or unexpected behavior

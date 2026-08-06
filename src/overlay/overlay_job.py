@@ -8,6 +8,7 @@ from src.overlay.image_composer import ImageComposer
 from src.overlay.scan_overlay_pairs import OverlayPair
 from src.overlay.video_composer import VideoComposer
 
+
 def run_overlay_job(pair: OverlayPair) -> Path:
     output_path = overlay_output_path(pair)
 

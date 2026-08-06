@@ -1,5 +1,5 @@
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from imageio_ffmpeg import get_ffmpeg_exe
@@ -24,7 +24,7 @@ class MediaDatetimeReader:
             # are copied or extracted between folders.
             return datetime.fromtimestamp(
                 self.file_path.stat().st_mtime,
-                tz=timezone.utc,
+                tz=UTC,
             ).replace(microsecond=0)
         except OSError:
             return None
@@ -70,7 +70,7 @@ class MediaDatetimeReader:
             return None
 
         return (
-            parsed.replace(tzinfo=timezone.utc)
+            parsed.replace(tzinfo=UTC)
             if parsed.tzinfo is None
-            else parsed.astimezone(timezone.utc)
+            else parsed.astimezone(UTC)
         ).replace(microsecond=0)

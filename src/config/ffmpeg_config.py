@@ -11,7 +11,7 @@ class FFmpegConfig:
     @staticmethod
     def get_video_pixel_format() -> str:
         return Config.cli_options["ffmpeg_pixel_format"]
-    
+
     @staticmethod
     def get_av1_speed_params() -> list[str]:
         return [

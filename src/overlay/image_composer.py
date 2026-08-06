@@ -1,5 +1,7 @@
 from pathlib import Path
+
 from PIL import Image
+
 from src.config import Config
 from src.overlay.scan_overlay_pairs import OverlayPair
 
@@ -13,15 +15,15 @@ class ImageComposer:
     def apply_overlay(self) -> None:
         with Image.open(self.main_path) as base_image:
             exif_bytes = base_image.info.get("exif")
-            base_image = self._ensure_rgba(base_image)
+            base_rgba = self._ensure_rgba(base_image)
 
             with Image.open(self.overlay_path) as overlay_image:
-                overlay_image = self._ensure_rgba(overlay_image)
+                overlay_rgba = self._ensure_rgba(overlay_image)
                 # In some cases the overlay image is mismatched by 1 pixel
-                overlay_image = self._resize_to_match(overlay_image, base_image.size)
-                combined_image = Image.alpha_composite(base_image, overlay_image)
+                overlay_rgba = self._resize_to_match(overlay_rgba, base_rgba.size)
+                combined_image = Image.alpha_composite(base_rgba, overlay_rgba)
 
-        # Convert to RGB before saving as JPEG, since JPEG does not support alpha channel
+        # Convert to RGB before saving as JPEG, since JPEG does not support alpha.
         combined_rgb_image = combined_image.convert("RGB")
 
         quality = Config.cli_options["jpeg_quality"]

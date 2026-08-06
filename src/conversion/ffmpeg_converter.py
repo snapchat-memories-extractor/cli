@@ -46,14 +46,14 @@ class VideoConverter:
             "-map_metadata", "0", # Copy metadata from input to output
             "-c:a", "copy", # Copy audio streams without re-encoding
             "-c:v", codec,
-            "-crf", str(av1_crf)
+            "-crf", str(av1_crf),
         ]
 
-        # At this point we are 100% sure that the user wants to convert to AV1, so we can add the AV1-specific parameters
-        command += ["-b:v", "0"] # Set video bitrate to 0 for CRF mode (quality-based encoding)
+        # At this point the user wants AV1, so add AV1-specific parameters.
+        command += ["-b:v", "0"] # Set bitrate to 0 for CRF mode.
 
         # Add AV1 speed parameters based on the selected encoder and user preferences
-        command += FFmpegConfig.get_av1_speed_params() 
+        command += FFmpegConfig.get_av1_speed_params()
         command += FFmpegConfig.get_av1_quality_params()
         command += FFmpegConfig.get_av1_film_grain_params()
 

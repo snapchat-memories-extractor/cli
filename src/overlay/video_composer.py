@@ -57,7 +57,7 @@ class VideoComposer:
 
         return [
             get_ffmpeg_exe(),
-            "-y", # Overwrite output file if it exists
+            "-y", # Overwrite stale temporary output if it exists
             "-i", str(self.main_path),
             "-i", str(overlay_path),
             "-filter_complex", "overlay=0:0", # Overlay at top-left corner
@@ -78,5 +78,6 @@ class VideoComposer:
             check=True, # Raise error if ffmpeg fails
             timeout=timeout,
             capture_output=True, # Do not print ffmpeg output to console
-            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0), # Prevents opening a new console window on Windows
+            # Prevents opening a new console window on Windows.
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
