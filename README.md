@@ -561,7 +561,7 @@ python main.py --video-codec av1
 
 ### Advanced Options
 
-> **Note:** Videos without overlays are left alone unless `--video-codec av1` is enabled. Videos with overlays are encoded during overlay using `libx264`, `--overlay-video-crf`, and `--overlay-video-preset`; metadata writing uses stream copy and does not re-encode video. Final conversion flags such as `--av1-crf`, `--ffmpeg-pixel-format`, every `--av1-*` flag, `--film-grain`, and `--grain-denoise` only affect the conversion stage. JPEGs default to quality 95 and are left byte-identical unless `--jxl` is set.
+> **Note:** Videos without overlays are left alone unless `--video-codec av1` is enabled. Videos with overlays are encoded during overlay using `libx264`, `--overlay-video-crf`, and `--overlay-video-preset`; metadata writing uses stream copy and does not re-encode video. Final conversion flags such as `--av1-crf`, `--ffmpeg-pixel-format`, every `--av1-*` flag, `--film-grain`, and `--grain-denoise` only affect the conversion stage. JPEGs that skip overlay, metadata writing, and JXL conversion are left byte-identical. JPEGs written by overlay or metadata use `--jpeg-quality`.
 
 <details>
 <summary><b>FFmpeg Timeout: -f / --ffmpeg-timeout SECONDS</b></summary>
