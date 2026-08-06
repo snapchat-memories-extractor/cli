@@ -235,33 +235,14 @@ def get_cli_args() -> argparse.Namespace:
             (best compression, royalty-free, slower to encode)",
     )
     parser.add_argument(
-        "--av1-encoder",
-        "-ae",
-        type=str,
-        choices=["svt-av1", "libaom-av1"],
-        default="svt-av1",
-        help="AV1 encoder to use when --video-codec=av1: svt-av1 (default, faster) \
-            or libaom-av1 (slower, more tuning options). Short: -ae",
-    )
-    parser.add_argument(
-        "--av1-preset",
-        "-ap",
-        type=int,
-        choices=range(0, 14),
-        default=8,
-        metavar="0-13",
-        help="SVT-AV1 encoding speed preset (0=slowest/best, 13=fastest/worst, \
-            default: 8). Only applies when --av1-encoder=svt-av1. Short: -ap",
-    )
-    parser.add_argument(
         "--av1-cpu-used",
         "-acu",
         type=int,
         choices=range(0, 9),
         default=4,
         metavar="0-8",
-        help="libaom-av1 encoding speed (0=slowest/best, 8=fastest/worst, \
-            default: 4). Only applies when --av1-encoder=libaom-av1. Short: -acu",
+        help="AV1 encoding speed (0=slowest/best, 8=fastest/worst, \
+            default: 4). Only applies when --video-codec=av1. Short: -acu",
     )
     parser.add_argument(
         "--av1-tile-columns",
@@ -292,9 +273,9 @@ def get_cli_args() -> argparse.Namespace:
         choices=[0, 1],
         default=1,
         metavar="0|1",
-        help="Enable row-based multi-threading for libaom-av1 (0=disabled, \
+        help="Enable row-based multi-threading for AV1 (0=disabled, \
             1=enabled, default: 1). Improves encoding speed on multi-core CPUs. \
-            Only applies when --av1-encoder=libaom-av1. Short: -arm",
+            Only applies when --video-codec=av1. Short: -arm",
     )
     parser.add_argument(
         "--av1-aq-mode",
@@ -303,9 +284,9 @@ def get_cli_args() -> argparse.Namespace:
         choices=[0, 1, 2, 3],
         default=0,
         metavar="0-3",
-        help="Adaptive quantization mode for libaom-av1: 0=off, 1=variance, \
+        help="Adaptive quantization mode for AV1: 0=off, 1=variance, \
             2=complexity, 3=cyclic refresh (default: 0). \
-            Only applies when --av1-encoder=libaom-av1. Short: -aam",
+            Only applies when --video-codec=av1. Short: -aam",
     )
     parser.add_argument(
         "--av1-lag-in-frames",
@@ -313,10 +294,10 @@ def get_cli_args() -> argparse.Namespace:
         type=int,
         default=25,
         metavar="N",
-        help="Number of frames to look ahead for libaom-av1 rate control \
+        help="Number of frames to look ahead for AV1 rate control \
             (default: 25, max: 35). Higher values improve compression at the \
             cost of memory and latency. \
-            Only applies when --av1-encoder=libaom-av1. Short: -alf",
+            Only applies when --video-codec=av1. Short: -alf",
     )
     parser.add_argument(
         "--av1-tune",
@@ -332,8 +313,8 @@ def get_cli_args() -> argparse.Namespace:
         ],
         default=None,
         metavar="METRIC",
-        help="Tune libaom-av1 encoding for a specific quality metric \
-            (default: none). Only applies when --av1-encoder=libaom-av1. Short: -at",
+        help="Tune AV1 encoding for a specific quality metric \
+            (default: none). Only applies when --video-codec=av1. Short: -at",
     )
     parser.add_argument(
         "--av1-usage",
@@ -341,9 +322,9 @@ def get_cli_args() -> argparse.Namespace:
         type=str,
         choices=["good", "realtime", "allintra"],
         default="good",
-        help="libaom-av1 usage profile: good (default, best quality/speed tradeoff), \
+        help="AV1 usage profile: good (default, best quality/speed tradeoff), \
             realtime (low latency), allintra (still images / intra-only encoding). \
-            Only applies when --av1-encoder=libaom-av1. Short: -au",
+            Only applies when --video-codec=av1. Short: -au",
     )
     parser.add_argument(
         "--film-grain",

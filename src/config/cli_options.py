@@ -31,8 +31,6 @@ def build_cli_options(args: argparse.Namespace) -> dict:
         "log_level": parse_log_level(args.log_level),
         "ffmpeg_timeout": args.ffmpeg_timeout,
         "video_codec": args.video_codec,
-        "av1_encoder": args.av1_encoder,
-        "av1_preset": args.av1_preset,
         "av1_cpu_used": args.av1_cpu_used,
         "av1_tile_columns": args.av1_tile_columns,
         "av1_tile_rows": args.av1_tile_rows,

@@ -32,7 +32,7 @@ and can be toggled independently.
 - **Overlay merging** — applies caption, sticker, and drawing layers from `<id>-overlay` files onto photos and videos.
 - **Metadata embedding** — writes GPS into images and videos
 - **Image conversion** — JPEG → JPEG XL, lossless, 20-40% smaller
-- **Video conversion** — H.264 (default) or AV1 (SVT-AV1 / libaom-av1), with full quality and speed controls
+- **Video conversion** — H.264 (default) or AV1 (libaom-av1), with full quality and speed controls
 - **Resumable pipeline** - records per-stage progress so failed files are skipped by later stages and can be retried deliberately
 - **Interrupt-safe** — Ctrl+C finishes whatever pairs are already in flight before exiting cleanly, no half-written files left behind
 - **Zero system dependencies** — everything installs via pip
@@ -786,42 +786,12 @@ python main.py -la 10
 These options only apply when `--video-codec av1` is set.
 
 <details>
-<summary><b>AV1 Encoder: -ae / --av1-encoder [svt-av1|libaom-av1]</b></summary>
-
-**What it does:**
-- Selects the AV1 encoder implementation
-- `svt-av1` (default): Developed by Intel/Netflix. Much faster, suitable for general use
-- `libaom-av1`: The reference AV1 encoder. Slower but exposes more tuning options (see quality and speed controls below)
-
-**Examples**:
-
-Default (SVT-AV1):
-```bash
-python main.py --video-codec av1
-```
-
-Use libaom for maximum tuning control:
-```bash
-python main.py --video-codec av1 --av1-encoder libaom-av1
-```
-
-**Recommendations:**
-- **svt-av1** (default): Best for most users — fast and produces excellent quality
-- **libaom-av1**: Use only if you need advanced quality tuning options like `--av1-aq-mode`, `--av1-tune`, or `--av1-usage`
-
-</details>
-
-<details>
-<summary><b>AV1 Encoding Speed: -ap / --av1-preset (SVT-AV1) | -acu / --av1-cpu-used (libaom)</b></summary>
+<summary><b>AV1 Encoding Speed: -acu / --av1-cpu-used</b></summary>
 
 **What it does:**
 - Controls the speed/compression tradeoff for AV1 encoding
 - Slower = better compression and quality, higher CPU usage
 - Faster = quicker encoding, slightly larger files
-
-**SVT-AV1** (`--av1-preset`, range 0–13, default: `8`):
-- `0` = slowest, best compression
-- `13` = fastest, largest files
 
 **libaom-av1** (`--av1-cpu-used`, range 0–8, default: `4`):
 - `0` = slowest, best compression
@@ -829,23 +799,12 @@ python main.py --video-codec av1 --av1-encoder libaom-av1
 
 **Examples**:
 
-SVT-AV1, slower preset for better compression:
-```bash
-python main.py --video-codec av1 --av1-preset 4
-```
-
-SVT-AV1, faster preset for quicker encoding:
-```bash
-python main.py --video-codec av1 --av1-preset 11
-```
-
 libaom, balanced speed:
 ```bash
-python main.py --video-codec av1 --av1-encoder libaom-av1 --av1-cpu-used 4
+python main.py --video-codec av1 --av1-cpu-used 4
 ```
 
 **Recommendations:**
-- **SVT-AV1 preset 6–8**: Good balance of speed and quality for most uses
 - **libaom cpu-used 3–5**: Good balance for libaom
 
 </details>
@@ -857,7 +816,7 @@ python main.py --video-codec av1 --av1-encoder libaom-av1 --av1-cpu-used 4
 - Splits the video frame into tiles that can be encoded in parallel, improving encoding speed on multi-core CPUs
 - Values are log2: `0` = 1 tile, `1` = 2 tiles, `2` = 4 tiles, `3` = 8 tiles, etc.
 - **Default**: `0` for both (single tile)
-- Applies to both SVT-AV1 and libaom-av1
+- Applies when AV1 conversion is enabled
 
 **Examples**:
 
@@ -881,15 +840,15 @@ python main.py --video-codec av1 --av1-tile-columns 2
 <summary><b>AV1 Row Multithreading: -arm / --av1-row-mt [0|1]</b></summary>
 
 **What it does:**
-- Enables row-based multithreading within each tile for libaom-av1, allowing more CPU cores to be used during encoding
+- Enables row-based multithreading within each tile, allowing more CPU cores to be used during encoding
 - **Default**: `1` (enabled)
-- Only applies when `--av1-encoder libaom-av1`
+- Only applies when `--video-codec av1`
 
 **Examples**:
 
 Disable row multithreading:
 ```bash
-python main.py --video-codec av1 --av1-encoder libaom-av1 --av1-row-mt 0
+python main.py --video-codec av1 --av1-row-mt 0
 ```
 
 **Recommendations:**
@@ -901,15 +860,15 @@ python main.py --video-codec av1 --av1-encoder libaom-av1 --av1-row-mt 0
 <summary><b>AV1 Adaptive Quantization: -aam / --av1-aq-mode [0-3]</b></summary>
 
 **What it does:**
-- Controls how libaom-av1 distributes bits across different parts of the frame
+- Controls how AV1 distributes bits across different parts of the frame
 - `0` = off (default), `1` = variance-based, `2` = complexity-based, `3` = cyclic refresh
-- Only applies when `--av1-encoder libaom-av1`
+- Only applies when `--video-codec av1`
 
 **Examples**:
 
 Variance-based adaptive quantization:
 ```bash
-python main.py --video-codec av1 --av1-encoder libaom-av1 --av1-aq-mode 1
+python main.py --video-codec av1 --av1-aq-mode 1
 ```
 
 **Recommendations:**
@@ -922,21 +881,21 @@ python main.py --video-codec av1 --av1-encoder libaom-av1 --av1-aq-mode 1
 <summary><b>AV1 Lookahead: -alf / --av1-lag-in-frames N</b></summary>
 
 **What it does:**
-- Sets how many future frames libaom-av1 looks ahead when making rate control decisions
+- Sets how many future frames AV1 looks ahead when making rate control decisions
 - Higher values improve compression efficiency at the cost of memory and latency
 - **Default**: `25`, **Maximum**: `35`
-- Only applies when `--av1-encoder libaom-av1`
+- Only applies when `--video-codec av1`
 
 **Examples**:
 
 Maximum lookahead for best compression:
 ```bash
-python main.py --video-codec av1 --av1-encoder libaom-av1 --av1-lag-in-frames 35
+python main.py --video-codec av1 --av1-lag-in-frames 35
 ```
 
 Reduced lookahead to save memory:
 ```bash
-python main.py --video-codec av1 --av1-encoder libaom-av1 --av1-lag-in-frames 10
+python main.py --video-codec av1 --av1-lag-in-frames 10
 ```
 
 **Recommendations:**
@@ -948,21 +907,21 @@ python main.py --video-codec av1 --av1-encoder libaom-av1 --av1-lag-in-frames 10
 <summary><b>AV1 Tune: -at / --av1-tune METRIC</b></summary>
 
 **What it does:**
-- Tunes libaom-av1 encoding to optimise for a specific perceptual quality metric
+- Tunes AV1 encoding to optimise for a specific perceptual quality metric
 - Choices: `psnr`, `ssim`, `vmaf_with_preprocessing`, `vmaf_without_preprocessing`, `vmaf_max_gain`, `butteraugli`
 - **Default**: none (encoder uses its own balanced defaults)
-- Only applies when `--av1-encoder libaom-av1`
+- Only applies when `--video-codec av1`
 
 **Examples**:
 
 Tune for SSIM (general perceptual quality):
 ```bash
-python main.py --video-codec av1 --av1-encoder libaom-av1 --av1-tune ssim
+python main.py --video-codec av1 --av1-tune ssim
 ```
 
 Tune for VMAF (Netflix's perceptual quality metric):
 ```bash
-python main.py --video-codec av1 --av1-encoder libaom-av1 --av1-tune vmaf_with_preprocessing
+python main.py --video-codec av1 --av1-tune vmaf_with_preprocessing
 ```
 
 **Recommendations:**
@@ -975,22 +934,22 @@ python main.py --video-codec av1 --av1-encoder libaom-av1 --av1-tune vmaf_with_p
 <summary><b>AV1 Usage Profile: -au / --av1-usage [good|realtime|allintra]</b></summary>
 
 **What it does:**
-- Sets the libaom-av1 encoding profile, which changes the overall encoding strategy
+- Sets the AV1 encoding profile, which changes the overall encoding strategy
 - `good` (default): Best quality/speed tradeoff for offline encoding
 - `realtime`: Low-latency mode for live or real-time use cases
 - `allintra`: Encodes every frame as an intra frame; useful for still image sequences
-- Only applies when `--av1-encoder libaom-av1`
+- Only applies when `--video-codec av1`
 
 **Examples**:
 
 Default (good quality):
 ```bash
-python main.py --video-codec av1 --av1-encoder libaom-av1
+python main.py --video-codec av1
 ```
 
 Real-time encoding:
 ```bash
-python main.py --video-codec av1 --av1-encoder libaom-av1 --av1-usage realtime
+python main.py --video-codec av1 --av1-usage realtime
 ```
 
 **Recommendations:**
@@ -1005,7 +964,7 @@ python main.py --video-codec av1 --av1-encoder libaom-av1 --av1-usage realtime
 - Enables AV1 film grain synthesis. Instead of encoding actual grain pixel-by-pixel, the encoder models and removes the grain from the source, stores it as metadata, and the decoder re-applies it on playback
 - This can significantly reduce file size for noisy or grainy source footage
 - **Range**: 0 (disabled) to 50 (strong grain), **Default**: `0`
-- Applies to both SVT-AV1 and libaom-av1
+- Applies when AV1 conversion is enabled
 
 **Examples**:
 
@@ -1131,8 +1090,7 @@ file is required only when metadata writing is enabled.
 
 AV1 encoding is significantly more CPU-intensive than h264. Try the following to speed it up:
 
-- Use SVT-AV1 (default): `--av1-encoder svt-av1`
-- Increase the preset: `--av1-preset 10` or higher (up to 13)
+- Increase `--av1-cpu-used` toward `8`
 - Lower simultaneous AV1 encodes: `--av1-converter-concurrency 1` or `2`
 - Enable tiling to use more CPU cores: `--av1-tile-columns 1 --av1-tile-rows 1`
 - Raise the CRF slightly to reduce the amount of work: `--av1-crf 40`
