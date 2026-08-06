@@ -3,6 +3,17 @@ import argparse
 from src.config.logging_config import parse_log_level
 
 
+def _parse_positive_int(value: str) -> int:
+    try:
+        parsed = int(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError("must be a positive integer") from error
+
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return parsed
+
+
 def get_cli_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Snapchat Memories Downloader")
     parser.add_argument(
@@ -73,7 +84,7 @@ def get_cli_args() -> argparse.Namespace:
     parser.add_argument(
         "--ffmpeg-timeout",
         "-f",
-        type=int,
+        type=_parse_positive_int,
         default=60,
         metavar="SECONDS",
         help="Seconds to wait for ffmpeg operations (default: 60). Short: -f",
@@ -379,7 +390,7 @@ def get_cli_args() -> argparse.Namespace:
         "--jxl-timeout",
         "-jt",
         dest="jxl_timeout",
-        type=int,
+        type=_parse_positive_int,
         default=120,
         metavar="SECONDS",
         help="Timeout in seconds for JXL conversion (default: 120). \
@@ -388,8 +399,9 @@ def get_cli_args() -> argparse.Namespace:
     parser.add_argument(
         "--logs-amount",
         "-la",
-        type=int,
+        type=_parse_positive_int,
         default=5,
+        metavar="N",
         help="Number of log files to keep, any log files beyond this number \
             will be deleted (default: 5). Short: -la",
     )
