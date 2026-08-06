@@ -22,7 +22,7 @@ and can be toggled independently.
 
 <p align="center">
   <img src="assets/demo.gif" width="100%" alt="Snapchat Memories Extractor CLI Demo">
-  <br><em>Pairs and merges overlays, transcodes to JXL/AV1, embeds metadata</em>
+  <br><em>Pairs and merges overlays, embeds metadata, skips compressing</em>
 </p>
 
 ## Features
