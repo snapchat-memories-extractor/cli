@@ -39,7 +39,7 @@ class VideoConverter:
             "-map_metadata", "0", # Copy metadata from input to output
             "-c:a", "copy", # Copy audio streams without re-encoding
             "-c:v", codec,
-            "-crf", av1_crf
+            "-crf", str(av1_crf)
         ]
 
         # At this point we are 100% sure that the user wants to convert to AV1, so we can add the AV1-specific parameters

@@ -373,11 +373,26 @@ def get_cli_args() -> argparse.Namespace:
         dest="av1_crf",
         type=int,
         choices=range(0, 64),
-        default=None,
+        default=36,
         metavar="0-63",
         help="AV1 Constant Rate Factor for final video conversion quality \
             (lower=better, 0=lossless; default: 36). Legacy aliases: \
             --crf / --constant-rate-factor.",
+    )
+    parser.add_argument(
+        "--ffmpeg-pixel-format",
+        "-pf",
+        type=str,
+        choices=[
+            "yuv420p",
+            "yuv422p",
+            "yuv444p",
+            "yuv420p10le",
+            "yuv422p10le",
+            "yuv444p10le",
+        ],
+        default="yuv420p",
+        help="Pixel format for final video conversion (default: yuv420p). Short: -pf",
     )
     parser.add_argument(
         "--jxl-timeout",
