@@ -10,3 +10,7 @@ def is_image(path: Path) -> bool:
 
 def is_video(path: Path) -> bool:
     return path.suffix.lower() in VIDEO_SUFFIXES
+
+
+def is_supported_media(path: Path) -> bool:
+    return is_image(path) or is_video(path)

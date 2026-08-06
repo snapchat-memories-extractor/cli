@@ -12,6 +12,7 @@ from src.core.state_store import PipelineStage, StateStore
 from src.helpers import (
     handle_phase_keyboard_interrupt,
     is_image,
+    is_video,
     scan_output_files,
 )
 from src.logger import log
@@ -94,8 +95,12 @@ class ConversionPhase:
         if is_image(file_path):
             self._process_image(file_path)
             return
+        if is_video(file_path):
+            self._process_video(file_path)
+            return
 
-        self._process_video(file_path)
+        self.state_store.mark_skipped(file_path, "conversion")
+        self.stats.mark("skipped", file_path, "unsupported media type")
 
     def _process_image(self, file_path: Path) -> None:
         self.state_store.mark_running(file_path, "conversion")

@@ -6,6 +6,7 @@ from src.core.state_store import StateStore
 from src.helpers import (
     handle_phase_keyboard_interrupt,
     is_image,
+    is_supported_media,
     log_resumed_stage_skip,
     scan_output_files,
 )
@@ -40,6 +41,7 @@ class MetadataPhase:
                 log("No media files found to process.", "info")
                 return
 
+            media_files = self._filter_supported_media(media_files)
             # Filter out media files that failed in previous stage
             media_files = self._filter_blocked_media(media_files)
             # Filter out media files that have already been processed in this stage
@@ -144,6 +146,16 @@ class MetadataPhase:
                 )
             else:
                 eligible.append(file_path)
+        return eligible
+
+    def _filter_supported_media(self, media_files: list[Path]) -> list[Path]:
+        eligible = []
+        for file_path in media_files:
+            if is_supported_media(file_path):
+                eligible.append(file_path)
+            else:
+                self.state_store.mark_skipped(file_path, "metadata")
+                self.stats.mark("skipped", file_path, "unsupported media type")
         return eligible
 
     def _filter_resumable_media(self, media_files: list[Path]) -> list[Path]:
