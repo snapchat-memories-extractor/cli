@@ -79,11 +79,10 @@ def get_cli_args() -> argparse.Namespace:
         type=str,
         choices=["on", "off", "both"],
         default="on",
-        help="Overlay handling: 'on' composites into a new <id>-overlaid \
-            file and deletes both source files. \
-            'off' deletes overlay files without compositing them. 'both' \
-            composites into a new <id>-overlaid file while keeping the \
-            original <id>-main file, and only deletes the overlay source. \
+        help="Overlay handling: 'on' writes composited <id>-overlaid files. \
+            'off' copies clean <id>-main files and ignores overlays. 'both' \
+            writes composited <id>-overlaid files and clean <id>-main copies. \
+            Source files are left untouched. \
             Short: -om",
     )
     parser.add_argument(
