@@ -2,8 +2,6 @@
 
 import argparse
 
-from src.config.logging_config import parse_log_level
-
 
 def build_cli_options(args: argparse.Namespace) -> dict:
     return {
@@ -27,7 +25,7 @@ def build_cli_options(args: argparse.Namespace) -> dict:
         "logs_amount": args.logs_amount,
         "convert_to_jxl": args.jxl,
         "jxl_effort": args.jxl_effort,
-        "log_level": parse_log_level(args.log_level),
+        "log_level": args.log_level,
         "ffmpeg_timeout": args.ffmpeg_timeout,
         "video_codec": args.video_codec,
         "av1_cpu_used": args.av1_cpu_used,

@@ -1,5 +1,7 @@
 import argparse
 
+from src.config.logging_config import parse_log_level
+
 
 def get_cli_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Snapchat Memories Downloader")
@@ -390,8 +392,8 @@ def get_cli_args() -> argparse.Namespace:
     parser.add_argument(
         "--log-level",
         "-l",
-        type=str,
-        default="OFF",
+        type=parse_log_level,
+        default=parse_log_level("OFF"),
         metavar="LEVEL",
         help="Logging level: 0=OFF, 1=CRITICAL, 2=ERROR, 3=WARNING, 4=INFO, 5=DEBUG. \
             Can also use names: OFF, CRITICAL, ERROR, WARNING, INFO, DEBUG \
