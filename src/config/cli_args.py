@@ -202,8 +202,9 @@ def get_cli_args() -> argparse.Namespace:
         "--jpeg-quality",
         "-q",
         type=int,
+        choices=range(1, 101),
         default=95,
-        metavar="N",
+        metavar="1-100",
         help="JPEG quality 1-100 (default: 95). Short: -q",
     )
     parser.add_argument(
@@ -292,8 +293,9 @@ def get_cli_args() -> argparse.Namespace:
         "--av1-lag-in-frames",
         "-alf",
         type=int,
+        choices=range(0, 36),
         default=25,
-        metavar="N",
+        metavar="0-35",
         help="Number of frames to look ahead for AV1 rate control \
             (default: 25, max: 35). Higher values improve compression at the \
             cost of memory and latency. \
@@ -330,6 +332,7 @@ def get_cli_args() -> argparse.Namespace:
         "--film-grain",
         "-fg",
         type=int,
+        choices=range(0, 51),
         default=0,
         metavar="0-50",
         help="Film grain synthesis level for AV1 (0=disabled, 1-50=strength, \
