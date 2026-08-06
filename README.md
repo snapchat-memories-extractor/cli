@@ -30,7 +30,7 @@ and can be toggled independently.
 - **Local-first** — works entirely from an export already sitting on disk; no download links, no expired links, no network access at all
 - **Input-safe by default** - your original export files are read, not rewritten or deleted; fail-fast checks refuse an output directory inside the memories folder
 - **Overlay merging** — applies caption, sticker, and drawing layers from `<id>-overlay` files onto photos and videos.
-- **Metadata embedding** — writes GPS into images and videos
+- **Metadata embedding** — writes GPS into images and videos, plus captured date/time EXIF into matched images
 - **Image conversion** — JPEG → JPEG XL, lossless, 20-40% smaller
 - **Video conversion** — H.264 (default) or AV1 (libaom-av1), with full quality and speed controls
 - **Resumable pipeline** - records per-stage progress so failed files are skipped by later stages and can be retried deliberately
@@ -437,6 +437,7 @@ python main.py --strict
 
 **What it does:**
 - **By default**, this tool embeds GPS location metadata into every photo and video that has GPS data available
+- Matched images also get captured date/time written into EXIF, which photo apps read more reliably than Windows created, modified, and accessed file timestamps
 - Use `--no-metadata` if you want to skip writing metadata entirely
 - With `--no-metadata`, `memories_history.json` is not required or read
 - Files with no GPS data available will not get GPS fields, but matched images still get captured date/time EXIF
