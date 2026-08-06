@@ -4,11 +4,6 @@ from src.config.cli_args import get_cli_args
 from src.config.cli_options import build_cli_options
 
 
-def ensure_directories(output_folder: Path, logs_folder: Path) -> None:
-    output_folder.mkdir(parents=True, exist_ok=True)
-    logs_folder.mkdir(parents=True, exist_ok=True)
-
-
 class Config:
     json_path: Path = None
     memories_folder: Path = None
@@ -24,7 +19,6 @@ class Config:
         cls.memories_folder = cls._get_memories_folder()
         cls.output_folder = cls._get_output_folder()
         cls.logs_folder = cls._get_logs_folder()
-        ensure_directories(cls.output_folder, cls.logs_folder)
 
     @classmethod
     def _get_memories_json_path(cls) -> Path:
