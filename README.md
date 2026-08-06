@@ -145,8 +145,7 @@ python main.py --memories-json C:\Users\user\Downloads\memories_history.json
 - Specifies the path to the folder containing your exported memory files
   (the `<id>-main.<ext>` / `<id>-overlay.<ext>` pairs)
 - **Default**: `data/memories` (relative to the project root)
-- Scanned recursively, so it's fine if Snapchat's export nests files into
-  dated subfolders
+- Files must be directly inside this folder, with no nesting
 - If you placed the folder in `/data`, you don't need this flag at all
 
 **Examples**:
