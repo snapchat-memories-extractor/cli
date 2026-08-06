@@ -14,12 +14,15 @@ def empty_state() -> dict[str, object]:
 
 
 def default_state_path() -> Path:
-    source_folder = Path(Config.cli_options["memories_folder"] or "data/memories")
+    project_root = Path(__file__).resolve().parents[3]
+    source_folder = Path(
+        Config.cli_options["memories_folder"] or project_root / "data/memories"
+    )
 
     source_path = os.path.normcase(str(source_folder.expanduser().absolute())) # Get string of absolute path
     source_key = hashlib.sha256(source_path.encode("utf-8")).hexdigest()[:16] # Use first 16 chars of SHA256 hash of path as key
-    state_dir = Path(__file__).resolve().parents[3] / APP_STATE_DIR # Get the state directory relative to this file
-    
+    state_dir = project_root / APP_STATE_DIR # Get the state directory relative to this file
+
     return state_dir / f"{PIPELINE_STATE_FILE_PREFIX}-{source_key}.json"
 
 

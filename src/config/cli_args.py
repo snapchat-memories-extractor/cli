@@ -13,7 +13,8 @@ def get_cli_args() -> argparse.Namespace:
         metavar="PATH",
         help=(
             "Path to the memories JSON file "
-            "(default: ./data/memories_history.json). Short: -mj"
+            "(default: data/memories_history.json under the project root). "
+            "Short: -mj"
         ),
     )
     parser.add_argument(
@@ -23,7 +24,8 @@ def get_cli_args() -> argparse.Namespace:
         default=None,
         metavar="PATH",
         help="Path to the local Snapchat export folder containing \
-            <id>-main / <id>-overlay media files (default: ./data/memories). \
+            <id>-main / <id>-overlay media files (default: data/memories/ \
+            under the project root). \
             Short: -mf",
     )
     parser.add_argument(
@@ -34,7 +36,7 @@ def get_cli_args() -> argparse.Namespace:
         metavar="PATH",
         help=(
             "Custom output directory for processed files "
-            "(default: ./output). Short: -o"
+            "(default: output/ under the project root). Short: -o"
         ),
     )
     parser.add_argument(
@@ -43,7 +45,10 @@ def get_cli_args() -> argparse.Namespace:
         type=str,
         default=None,
         metavar="PATH",
-        help="Custom directory for log files (default: ./logs). Short: -lp",
+        help=(
+            "Custom directory for log files "
+            "(default: logs/ under the project root). Short: -lp"
+        ),
     )
     parser.add_argument(
         "--reset-state",

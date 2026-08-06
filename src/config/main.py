@@ -24,22 +24,22 @@ class Config:
     def _get_memories_json_path(cls) -> Path:
         if cls.cli_options["memories_json"]:
             return Path(cls.cli_options["memories_json"])
-        return Path("data/memories_history.json")
+        return Path(__file__).resolve().parents[2] / "data/memories_history.json"
 
     @classmethod
     def _get_memories_folder(cls) -> Path:
         if cls.cli_options["memories_folder"]:
             return Path(cls.cli_options["memories_folder"])
-        return Path("data/memories")
+        return Path(__file__).resolve().parents[2] / "data/memories"
 
     @classmethod
     def _get_output_folder(cls) -> Path:
         if cls.cli_options["output"]:
             return Path(cls.cli_options["output"])
-        return Path("output")
+        return Path(__file__).resolve().parents[2] / "output"
 
     @classmethod
     def _get_logs_folder(cls) -> Path:
         if cls.cli_options["logs_path"]:
             return Path(cls.cli_options["logs_path"])
-        return Path("logs")
+        return Path(__file__).resolve().parents[2] / "logs"
