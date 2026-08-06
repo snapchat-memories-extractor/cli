@@ -72,15 +72,6 @@ def get_cli_args() -> argparse.Namespace:
         help="Seconds to wait for ffmpeg operations (default: 60). Short: -f",
     )
     parser.add_argument(
-        "--concurrent",
-        "-c",
-        type=int,
-        default=10,
-        metavar="N",
-        help="Number of media pairs (main + overlay) to process in parallel \
-            (default: 10). This is CPU-bound work Short: -c",
-    )
-    parser.add_argument(
         "--overlay-mode",
         "-om",
         type=str,
