@@ -57,6 +57,7 @@ class VideoComposer:
 
         return [
             get_ffmpeg_exe(),
+            "-y", # Overwrite output file if it exists
             "-i", str(self.main_path),
             "-i", str(overlay_path),
             "-filter_complex", "overlay=0:0", # Overlay at top-left corner

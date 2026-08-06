@@ -15,7 +15,11 @@ def run_overlay_job(pair: OverlayPair) -> Path:
         f"{output_path.stem}.compositing{output_path.suffix}"
     )
 
-    _composite(pair, temp_output)
+    try:
+        _composite(pair, temp_output)
+    except Exception:
+        temp_output.unlink(missing_ok=True)
+        raise
 
     if not _is_valid_output(temp_output):
         _log_overlay_failure(pair, temp_output)
