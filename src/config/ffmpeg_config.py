@@ -42,6 +42,7 @@ class FFmpegConfig:
             return []
 
         return [
-            "-film-grain-table", "",
             "-denoise-noise-level", str(film_grain),
+            "-aom-params",
+            f"enable-dnl-denoising={Config.cli_options['grain_denoise']}",
         ]
