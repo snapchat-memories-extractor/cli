@@ -439,7 +439,7 @@ python main.py --strict
 - **By default**, this tool embeds GPS location metadata into every photo and video that has GPS data available
 - Use `--no-metadata` if you want to skip writing metadata entirely
 - With `--no-metadata`, `memories_history.json` is not required or read
-- Files with no GPS data available will never get metadata regardless of this flag, as there's nothing to write
+- Files with no GPS data available will not get GPS fields, but matched images still get captured date/time EXIF
 
 **Examples**:
 
