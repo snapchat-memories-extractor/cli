@@ -39,7 +39,7 @@ def cli_options() -> dict[str, object]:
         "convert_to_jxl": False,
         "jxl_effort": 9,
         "log_level": logging.DEBUG,
-        "ffmpeg_timeout": 60,
+        "ffmpeg_timeout": 1200,
         "video_codec": "h264",
         "av1_cpu_used": 4,
         "av1_tile_columns": 0,

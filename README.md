@@ -600,12 +600,12 @@ python main.py --video-codec av1 --keep-originals
 
 **What it does:**
 - Sets how many seconds the program will wait for FFmpeg to finish before giving up on an operation
-- **Default**: `60` seconds
+- **Default**: `1200` seconds
 - Increase if you have very large or slow-to-process video files
 
 **Examples**:
 
-Default (60 seconds):
+Default (1200 seconds):
 ```bash
 python main.py
 ```

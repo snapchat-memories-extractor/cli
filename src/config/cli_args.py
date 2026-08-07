@@ -85,9 +85,9 @@ def get_cli_args() -> argparse.Namespace:
         "--ffmpeg-timeout",
         "-ft",
         type=_parse_positive_int,
-        default=60,
+        default=1200,
         metavar="SECONDS",
-        help="Seconds to wait for ffmpeg operations (default: 60). \
+        help="Seconds to wait for ffmpeg operations (default: 1200). \
             Short: -ft",
     )
     parser.add_argument(
