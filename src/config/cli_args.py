@@ -83,11 +83,12 @@ def get_cli_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--ffmpeg-timeout",
-        "-f",
+        "-ft",
         type=_parse_positive_int,
         default=60,
         metavar="SECONDS",
-        help="Seconds to wait for ffmpeg operations (default: 60). Short: -f",
+        help="Seconds to wait for ffmpeg operations (default: 60). \
+            Short: -ft",
     )
     parser.add_argument(
         "--overlay-mode",

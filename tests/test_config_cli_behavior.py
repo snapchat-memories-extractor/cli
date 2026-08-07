@@ -148,6 +148,18 @@ def test_get_cli_args_accepts_new_and_legacy_metadata_concurrency_flags(
     assert get_cli_args().metadata_writer_concurrency == 6
 
 
+def test_get_cli_args_accepts_ffmpeg_timeout_flags(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(sys, "argv", ["snap-export", "--ffmpeg-timeout", "90"])
+
+    assert get_cli_args().ffmpeg_timeout == 90
+
+    monkeypatch.setattr(sys, "argv", ["snap-export", "-ft", "120"])
+
+    assert get_cli_args().ffmpeg_timeout == 120
+
+
 def test_build_cli_options_maps_public_options_and_inverted_flags() -> None:
     args = _make_args(
         memories_json="memories.json",

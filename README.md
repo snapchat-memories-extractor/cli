@@ -596,7 +596,7 @@ python main.py --video-codec av1 --keep-originals
 > **Note:** Videos without overlays are left alone unless metadata writing or `--video-codec av1` is enabled. Videos with overlays are encoded during overlay using `libx264`, `--overlay-video-crf`, and `--overlay-video-preset`; video metadata writing uses stream copy and does not re-encode video. Final conversion flags such as `--av1-crf`, `--ffmpeg-pixel-format`, every `--av1-*` flag, `--film-grain`, and `--grain-denoise` only affect the conversion stage. JPEGs that skip overlay, metadata writing, and JXL conversion are left byte-identical. JPEGs written by overlay or metadata use `--jpeg-quality`.
 
 <details>
-<summary><b>FFmpeg Timeout: -f / --ffmpeg-timeout SECONDS</b></summary>
+<summary><b>FFmpeg Timeout: -ft / --ffmpeg-timeout SECONDS</b></summary>
 
 **What it does:**
 - Sets how many seconds the program will wait for FFmpeg to finish before giving up on an operation
@@ -612,7 +612,7 @@ python main.py
 
 Wait up to 120 seconds for each FFmpeg operation:
 ```bash
-python main.py -f 120
+python main.py -ft 120
 python main.py --ffmpeg-timeout 120
 ```
 
