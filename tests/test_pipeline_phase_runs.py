@@ -453,6 +453,7 @@ def test_conversion_phase_run_processes_enabled_image_and_video_conversions(
     video = _touch(Config.output_folder / "clip.mp4")
     unsupported = _touch(Config.output_folder / "notes.txt")
     jxl = Config.output_folder / "photo.jxl"
+    av1 = Config.output_folder / "clip-av1.mp4"
     converted_videos: list[Path] = []
 
     class FakeJXLConverter:
@@ -468,7 +469,7 @@ def test_conversion_phase_run_processes_enabled_image_and_video_conversions(
             converted_videos.append(file_path)
 
         def run(self) -> Path:
-            return converted_videos[-1]
+            return av1
 
     monkeypatch.setattr(
         "src.conversion.conversion_phase.JXLConverter",
@@ -485,6 +486,7 @@ def test_conversion_phase_run_processes_enabled_image_and_video_conversions(
     assert state_store.get_status(image, "conversion") == "done"
     assert state_store.get_status(jxl, "conversion") == "done"
     assert state_store.get_status(video, "conversion") == "done"
+    assert state_store.get_status(av1, "conversion") == "done"
     assert state_store.get_status(unsupported, "conversion") == "skipped"
 
 

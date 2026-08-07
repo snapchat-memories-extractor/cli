@@ -5,6 +5,7 @@ from queue import Empty
 
 import pytest
 
+from src.config import Config
 from src.conversion import jxl_converter
 from src.conversion.jxl_converter import JXLConverter, _convert_jpeg_to_jxl_worker
 
@@ -74,6 +75,27 @@ def test_jxl_converter_run_success_removes_original(
     assert output == tmp_path / "photo.jxl"
     assert output.read_bytes() == b"jxl"
     assert not source.exists()
+
+
+def test_jxl_converter_run_keeps_original_when_requested(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    Config.cli_options["keep_conversion_originals"] = True
+    source = tmp_path / "photo.jpg"
+    source.write_bytes(b"jpeg")
+
+    def fake_run_process(self: JXLConverter, output_path: Path, *_args: object) -> None:
+        assert self.input_path == source
+        output_path.write_bytes(b"jxl")
+
+    monkeypatch.setattr(JXLConverter, "_run_conversion_process", fake_run_process)
+
+    output = JXLConverter(source).run()
+
+    assert output == tmp_path / "photo.jxl"
+    assert output.read_bytes() == b"jxl"
+    assert source.read_bytes() == b"jpeg"
 
 
 def test_jxl_converter_run_succeeds_when_original_is_already_missing(

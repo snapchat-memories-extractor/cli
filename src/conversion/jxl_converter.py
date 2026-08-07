@@ -51,15 +51,16 @@ class JXLConverter:
             )
             return None
 
-        try:
-            if self.input_path.exists():
-                self.input_path.unlink()
-        except OSError as error:
-            log(
-                f"Could not remove original after JXL conversion "
-                f"{self.input_path}: {error}",
-                "warning",
-            )
+        if not Config.cli_options["keep_conversion_originals"]:
+            try:
+                if self.input_path.exists():
+                    self.input_path.unlink()
+            except OSError as error:
+                log(
+                    f"Could not remove original after JXL conversion "
+                    f"{self.input_path}: {error}",
+                    "warning",
+                )
         return output_path
 
     def _handle_conversion_failure(

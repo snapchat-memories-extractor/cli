@@ -510,6 +510,7 @@ python main.py -q 100
 - Use `--jxl` to convert JPEG images to the modern **JPGXL (JXL)** format
 - JPGXL provides lossless compression with typically **20-40% better compression** than JPEG
 - All metadata (date, GPS coordinates, image properties) is preserved during conversion
+- When `--jxl` is enabled, the converted `.jxl` replaces the output JPEG unless `--keep-originals` is used
 
 **Examples**:
 
@@ -564,6 +565,29 @@ python main.py --video-codec av1
 - Use `av1` if you want the best compression and your devices support it
 
 > **Note**: AV1 encoding is significantly slower than h264. See the [AV1 Options](#av1-options) section below for speed and quality controls.
+
+</details>
+
+<details>
+<summary><b>Keep Conversion Originals: -ko / --keep-originals</b></summary>
+
+**What it does:**
+- Keeps the output file that existed before final conversion
+- Applies to JXL image conversion and AV1 video conversion
+- **Default**: conversion originals are removed or replaced
+- With `--keep-originals`, AV1 conversion creates a `*-av1.mp4` file and leaves the original `.mp4` in place
+
+**Examples**:
+
+Keep JPEGs when creating JXL files:
+```bash
+python main.py --jxl --keep-originals
+```
+
+Keep original MP4s when creating AV1 files:
+```bash
+python main.py --video-codec av1 --keep-originals
+```
 
 </details>
 

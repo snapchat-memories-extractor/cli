@@ -32,6 +32,7 @@ def cli_options() -> dict[str, object]:
         "jxl_converter_concurrency": 2,
         "av1_converter_concurrency": 2,
         "write_metadata": True,
+        "keep_conversion_originals": False,
         "strict_location": False,
         "jpeg_quality": 95,
         "logs_amount": 5,

@@ -202,6 +202,15 @@ def get_cli_args() -> argparse.Namespace:
         help="Skip writing metadata (default: metadata written). Short: -M",
     )
     parser.add_argument(
+        "--keep-originals",
+        "-ko",
+        dest="keep_conversion_originals",
+        default=False,
+        action="store_true",
+        help="Keep original output files alongside converted JXL/AV1 files \
+            (default: delete conversion originals). Short: -ko",
+    )
+    parser.add_argument(
         "--strict",
         "-s",
         default=False,

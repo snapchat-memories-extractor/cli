@@ -20,6 +20,7 @@ def build_cli_options(args: argparse.Namespace) -> dict:
         "jxl_converter_concurrency": args.jxl_converter_concurrency,
         "av1_converter_concurrency": args.av1_converter_concurrency,
         "write_metadata": not args.no_metadata,
+        "keep_conversion_originals": args.keep_conversion_originals,
         "strict_location": args.strict_location,
         "jpeg_quality": args.jpeg_quality,
         "logs_amount": args.logs_amount,

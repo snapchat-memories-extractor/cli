@@ -133,12 +133,14 @@ class ConversionPhase:
         self.state_store.mark_running(file_path, "conversion")
         if Config.cli_options["video_codec"] == "av1":
             with self.conversion_slots.av1:
-                VideoConverter(file_path).run()
-            self.state_store.mark_done(
-                file_path,
-                "conversion",
-            )
+                output_path = VideoConverter(file_path).run()
+            self.state_store.mark_done(file_path, "conversion")
             self.stats.mark("done", file_path)
+            if output_path != file_path:
+                self.state_store.mark_done(output_path, "conversion")
+                self.stats.mark("done", output_path)
+                self._copy_terminal_state(file_path, output_path, "overlay")
+                self._copy_terminal_state(file_path, output_path, "metadata")
         else:
             self.state_store.mark_skipped(file_path, "conversion")
             self.stats.mark("skipped", file_path, "video conversion is disabled")

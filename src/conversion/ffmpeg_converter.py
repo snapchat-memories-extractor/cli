@@ -1,5 +1,6 @@
 import subprocess
 from pathlib import Path
+from shutil import copy2
 
 from imageio_ffmpeg import get_ffmpeg_exe
 
@@ -11,11 +12,15 @@ class VideoConverter:
         self.file_path = file_path
 
     def run(self) -> Path:
-        temp_path = self.file_path.with_suffix(".tmp" + self.file_path.suffix)
-        command = self._build_ffmpeg_command(temp_path)
+        input_path = self._input_path()
+        temp_path = input_path.with_suffix(".tmp" + input_path.suffix)
         timeout = Config.cli_options["ffmpeg_timeout"]
 
         try:
+            if input_path != self.file_path:
+                input_path.unlink(missing_ok=True)
+                copy2(self.file_path, input_path)
+            command = self._build_ffmpeg_command(input_path, temp_path)
             subprocess.run(
                 command,
                 check=True,
@@ -25,20 +30,33 @@ class VideoConverter:
             )
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
             temp_path.unlink(missing_ok=True)
+            self._remove_duplicate(input_path)
             message = f"Video conversion failed: {self._format_error(error)}"
             raise RuntimeError(message) from error
+        except OSError as error:
+            temp_path.unlink(missing_ok=True)
+            self._remove_duplicate(input_path)
+            raise RuntimeError(f"Video conversion failed: {error}") from error
 
-        temp_path.replace(self.file_path)
-        return self.file_path
+        try:
+            temp_path.replace(input_path)
+        except OSError as error:
+            temp_path.unlink(missing_ok=True)
+            raise RuntimeError(
+                f"Video conversion failed: could not finalize converted video "
+                f"{input_path}: {error}"
+            ) from error
 
-    def _build_ffmpeg_command(self, temp_path: Path) -> list[str]:
+        return input_path
+
+    def _build_ffmpeg_command(self, input_path: Path, temp_path: Path) -> list[str]:
         codec = FFmpegConfig.get_video_codec()
         av1_crf = Config.cli_options["av1_crf"]
 
         command = [
             get_ffmpeg_exe(),
             "-y", # Overwrite output files without asking
-            "-i", str(self.file_path),
+            "-i", str(input_path),
             "-map_metadata", "0", # Copy metadata from input to output
             "-c:a", "copy", # Copy audio streams without re-encoding
             "-c:v", codec,
@@ -61,6 +79,20 @@ class VideoConverter:
         ]
 
         return command
+
+    def _input_path(self) -> Path:
+        if not Config.cli_options["keep_conversion_originals"]:
+            return self.file_path
+
+        return self.file_path.with_name(
+            f"{self.file_path.stem}-av1{self.file_path.suffix}"
+        )
+
+    def _remove_duplicate(self, input_path: Path) -> None:
+        if input_path == self.file_path:
+            return
+
+        input_path.unlink(missing_ok=True)
 
     @classmethod
     def _format_error(

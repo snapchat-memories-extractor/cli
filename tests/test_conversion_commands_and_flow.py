@@ -109,14 +109,15 @@ def test_video_converter_builds_ffmpeg_conversion_command(tmp_path: Path) -> Non
         }
     )
     file_path = tmp_path / "clip.mp4"
-    temp_path = tmp_path / "clip.tmp.mp4"
+    input_path = tmp_path / "clip-av1.mp4"
+    temp_path = tmp_path / "clip-av1.tmp.mp4"
 
-    command = VideoConverter(file_path)._build_ffmpeg_command(temp_path)
+    command = VideoConverter(file_path)._build_ffmpeg_command(input_path, temp_path)
 
     assert command[1:8] == [
         "-y",
         "-i",
-        str(file_path),
+        str(input_path),
         "-map_metadata",
         "0",
         "-c:a",
@@ -129,7 +130,7 @@ def test_video_converter_builds_ffmpeg_conversion_command(tmp_path: Path) -> Non
     assert command[-3:] == ["-pix_fmt", "yuv444p", str(temp_path)]
 
 
-def test_video_converter_replaces_file_on_success(
+def test_video_converter_replaces_original_by_default(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -139,6 +140,7 @@ def test_video_converter_replaces_file_on_success(
 
     def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess:
         seen["kwargs"] = kwargs
+        assert Path(command[3]) == file_path
         Path(command[-1]).write_bytes(b"new")
         return subprocess.CompletedProcess(command, 0)
 
@@ -150,6 +152,30 @@ def test_video_converter_replaces_file_on_success(
     assert file_path.read_bytes() == b"new"
     assert seen["kwargs"]["check"] is True
     assert seen["kwargs"]["timeout"] == Config.cli_options["ffmpeg_timeout"]
+
+
+def test_video_converter_keeps_original_when_requested(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    Config.cli_options["keep_conversion_originals"] = True
+    file_path = tmp_path / "clip.mp4"
+    output_path = tmp_path / "clip-av1.mp4"
+    file_path.write_bytes(b"old")
+
+    def fake_run(command: list[str], **_kwargs: object) -> subprocess.CompletedProcess:
+        assert Path(command[3]) == output_path
+        assert output_path.read_bytes() == b"old"
+        Path(command[-1]).write_bytes(b"new")
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr("src.conversion.ffmpeg_converter.subprocess.run", fake_run)
+
+    result = VideoConverter(file_path).run()
+
+    assert result == output_path
+    assert file_path.read_bytes() == b"old"
+    assert output_path.read_bytes() == b"new"
 
 
 def test_video_converter_removes_temp_file_and_raises_on_failure(
@@ -280,6 +306,7 @@ def test_conversion_phase_processes_av1_video_when_enabled(
 ) -> None:
     Config.cli_options["video_codec"] = "av1"
     video = tmp_path / "clip.mp4"
+    output = tmp_path / "clip-av1.mp4"
     calls: list[Path] = []
 
     class FakeVideoConverter:
@@ -287,7 +314,7 @@ def test_conversion_phase_processes_av1_video_when_enabled(
             calls.append(file_path)
 
         def run(self) -> Path:
-            return calls[-1]
+            return output
 
     monkeypatch.setattr(
         "src.conversion.conversion_phase.VideoConverter",
@@ -297,6 +324,32 @@ def test_conversion_phase_processes_av1_video_when_enabled(
     ConversionPhase(state_store)._process_video(video)
 
     assert calls == [video]
+    assert state_store.get_status(video, "conversion") == "done"
+    assert state_store.get_status(output, "conversion") == "done"
+
+
+def test_conversion_phase_does_not_duplicate_av1_state_for_in_place_conversion(
+    monkeypatch: pytest.MonkeyPatch,
+    state_store: StateStore,
+    tmp_path: Path,
+) -> None:
+    Config.cli_options["video_codec"] = "av1"
+    video = tmp_path / "clip.mp4"
+
+    class FakeVideoConverter:
+        def __init__(self, file_path: Path) -> None:
+            assert file_path == video
+
+        def run(self) -> Path:
+            return video
+
+    monkeypatch.setattr(
+        "src.conversion.conversion_phase.VideoConverter",
+        FakeVideoConverter,
+    )
+
+    ConversionPhase(state_store)._process_video(video)
+
     assert state_store.get_status(video, "conversion") == "done"
 
 

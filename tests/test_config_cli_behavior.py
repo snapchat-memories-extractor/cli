@@ -28,6 +28,7 @@ def _make_args(**overrides: object) -> argparse.Namespace:
         "jxl_converter_concurrency": 10,
         "av1_converter_concurrency": 10,
         "no_metadata": False,
+        "keep_conversion_originals": False,
         "strict_location": False,
         "jpeg_quality": 95,
         "logs_amount": 5,
@@ -90,6 +91,7 @@ def test_get_cli_args_uses_current_defaults(monkeypatch: pytest.MonkeyPatch) -> 
     assert args.overlay_applier_concurrency == 10
     assert args.metadata_writer_concurrency == 10
     assert args.no_metadata is False
+    assert args.keep_conversion_originals is False
     assert args.log_level == logging.CRITICAL + 10
     assert args.video_codec == "h264"
 
@@ -112,6 +114,7 @@ def test_get_cli_args_accepts_new_and_legacy_video_flags(
             "av1",
             "--crf",
             "41",
+            "--keep-originals",
             "--log-level",
             "DEBUG",
         ],
@@ -125,6 +128,7 @@ def test_get_cli_args_accepts_new_and_legacy_video_flags(
     assert args.jxl is True
     assert args.video_codec == "av1"
     assert args.av1_crf == 41
+    assert args.keep_conversion_originals is True
     assert args.log_level == logging.DEBUG
 
 
@@ -151,6 +155,7 @@ def test_build_cli_options_maps_public_options_and_inverted_flags() -> None:
         output="out",
         logs_path="logs",
         no_metadata=True,
+        keep_conversion_originals=True,
         strict_location=True,
         overlay_video_preset="medium",
         jxl=True,
@@ -164,6 +169,7 @@ def test_build_cli_options_maps_public_options_and_inverted_flags() -> None:
     assert options["output"] == "out"
     assert options["logs_path"] == "logs"
     assert options["write_metadata"] is False
+    assert options["keep_conversion_originals"] is True
     assert options["strict_location"] is True
     assert options["convert_to_jxl"] is True
     assert options["video_codec"] == "av1"
