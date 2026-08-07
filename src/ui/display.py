@@ -65,7 +65,7 @@ class Display:
 
     def _get_progress_line(self) -> str:
         label = PHASE_LABELS[self.stage]
-        return f"  {label:<10} [{self.progress_bar}] {self.progress.percent:5.1f}%"
+        return f" {label:<10} [{self.progress_bar}] {self.progress.percent:5.1f}%"
 
     @staticmethod
     def _calculate_eta(current: int, elapsed_time: int, remaining: int) -> str:
@@ -80,24 +80,26 @@ class Display:
 
     @staticmethod
     def _get_loading_display_lines() -> tuple[str, str]:
-        line3 = "  Preparing pipeline state."
-        line4 = "  Scanning memories folder..."
+        line3 = " Preparing pipeline state."
+        line4 = " Scanning memories folder..."
         return line3, line4
 
     @staticmethod
     def _get_interruption_display_lines() -> tuple[str, str]:
-        line3 = "  Processing interrupted by user."
-        line4 = "  Finishing in-flight work, please wait..."
+        line3 = " Processing interrupted by user."
+        line4 = " Finishing in-flight work, please wait..."
         return line3, line4
 
     def _get_finished_display_lines(self) -> tuple[str, str]:
-        line3 = "  Processing complete."
+        left = " Processing complete."
+        right = f"Errors: {self.progress.failed} "
+        line3 = left.ljust(DISPLAY_WIDTH - len(right)) + right
         line4 = self._get_summary_line()
         return line3, line4
 
     def _get_base_display_lines(self) -> tuple[str, str]:
         line3 = (
-            f"  Done {self.progress.done} | Running {self.progress.running} | "
+            f" Done {self.progress.done} | Running {self.progress.running} | "
             f"Skipped {self.progress.skipped} | Failed {self.progress.failed}"
         )
         line4 = self._get_summary_line()
@@ -105,7 +107,7 @@ class Display:
 
     def _get_summary_line(self) -> str:
         return (
-            f"  Items {self.progress.terminal}/{self.progress.total} | "
+            f" Items {self.progress.terminal}/{self.progress.total} | "
             f"Elapsed {self._format_time(self.elapsed_time):>10} | "
             f"ETA {self.eta:>10}"
         )

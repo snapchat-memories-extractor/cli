@@ -158,11 +158,38 @@ def test_display_prints_bordered_status(
     ).print_display("finished")
 
     output = capsys.readouterr().out
+    lines = output.splitlines()
 
     assert "SNAPCHAT MEMORIES DOWNLOADER" in output
     assert "PHASE 3/3" in output
     assert "Processing complete." in output
+    assert "Errors: 0" in output
     assert "Conversion" in output
+    assert lines[3].startswith("| Conversion")
+    assert lines[5].startswith("| Processing complete.")
+    assert lines[5].endswith("Errors: 0 |")
+    assert lines[6].startswith("| Items 0/0")
+
+
+def test_display_finished_status_shows_failed_count(
+    capsys: pytest.CaptureFixture[str],
+    state_store: StateStore,
+    tmp_path: Path,
+) -> None:
+    failed = tmp_path / "failed.mp4"
+    state_store.mark_failed(failed, "conversion", "ffmpeg failed")
+
+    Display(
+        state_store=state_store,
+        stage="conversion",
+        items=[failed],
+        started_at=0,
+    ).print_display("finished")
+
+    output = capsys.readouterr().out
+
+    assert "Processing complete." in output
+    assert "Errors: 1" in output
 
 
 def test_display_prints_loading_interrupted_and_base_statuses(
