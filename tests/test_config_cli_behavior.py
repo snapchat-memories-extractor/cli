@@ -132,7 +132,7 @@ def test_get_cli_args_accepts_new_and_legacy_video_flags(
     assert args.log_level == logging.DEBUG
 
 
-def test_get_cli_args_accepts_new_and_legacy_metadata_concurrency_flags(
+def test_get_cli_args_accepts_metadata_concurrency_flags(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
@@ -143,7 +143,7 @@ def test_get_cli_args_accepts_new_and_legacy_metadata_concurrency_flags(
 
     assert get_cli_args().metadata_writer_concurrency == 8
 
-    monkeypatch.setattr(sys, "argv", ["snap-export", "-gwc", "6"])
+    monkeypatch.setattr(sys, "argv", ["snap-export", "-mwc", "6"])
 
     assert get_cli_args().metadata_writer_concurrency == 6
 

@@ -164,16 +164,12 @@ def get_cli_args() -> argparse.Namespace:
     parser.add_argument(
         "--metadata-writer-concurrency",
         "-mwc",
-        "--gps-writer-concurrency",
-        "-gwc",
-        dest="metadata_writer_concurrency",
         type=int,
         choices=range(1, 51),
         default=10,
         metavar="1-50",
         help="Number of metadata write operations to run in parallel \
-            (default: 10). Short: -mwc. Legacy alias: -gwc / \
-            --gps-writer-concurrency",
+            (default: 10). Short: -mwc",
     )
     parser.add_argument(
         "--jxl-converter-concurrency",
