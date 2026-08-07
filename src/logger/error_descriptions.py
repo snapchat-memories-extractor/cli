@@ -11,4 +11,5 @@ ERROR_DESCRIPTIONS = {
     "MATCH": "Matching error - ambiguous or missing datetime match to json entry",
     "META": "Metadata error - failed to write metadata",
     "SCAN": "Folder scan error - failed to enumerate the memories folder",
+    "CONV": "Conversion error - failed to convert media file",
 }

@@ -84,11 +84,11 @@ class ConversionPhase:
                 future.result()
             except Exception as error:
                 self.state_store.mark_failed(file_path, "conversion", str(error))
-                self.stats.mark("failed", file_path)
+                self.stats.mark("failed", file_path, log_item=False)
                 log(
-                    f"Unexpected failure processing '{file_path}': {error}",
+                    f"Conversion failed for '{file_path}': {error}",
                     "error",
-                    "ERR",
+                    "CONV",
                 )
 
     def _process_media(self, file_path: Path) -> None:
@@ -167,11 +167,6 @@ class ConversionPhase:
         for file_path in media_files:
             status = self.state_store.terminal_status(file_path, "conversion")
             if status:
-                log(
-                    f"Skipping conversion for '{file_path}' "
-                    f"because it is already {status}.",
-                    "info",
-                )
                 self.stats.mark("skipped", file_path, f"it is already {status}")
             else:
                 eligible.append(file_path)

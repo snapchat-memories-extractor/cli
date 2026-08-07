@@ -18,11 +18,6 @@ def log_resumed_stage_skip(
             f"Skipping {stage} for '{item_name}' because it failed earlier.",
             "warning",
         )
-    else:
-        log(
-            f"Skipping {stage} for '{item_name}' because it is already {status}.",
-            "info",
-        )
 
 
 def handle_phase_keyboard_interrupt(

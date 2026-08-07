@@ -165,9 +165,31 @@ def test_video_converter_removes_temp_file_and_raises_on_failure(
 
     monkeypatch.setattr("src.conversion.ffmpeg_converter.subprocess.run", fake_run)
 
-    with pytest.raises(RuntimeError, match="Video conversion failed"):
+    with pytest.raises(RuntimeError, match="ffmpeg exited with code 1") as error:
         VideoConverter(file_path).run()
 
+    assert "Command" not in str(error.value)
+    assert file_path.read_bytes() == b"old"
+    assert not (tmp_path / "clip.tmp.mp4").exists()
+
+
+def test_video_converter_shortens_timeout_errors(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    file_path = tmp_path / "clip.mp4"
+    file_path.write_bytes(b"old")
+
+    def fake_run(command: list[str], **_kwargs: object) -> None:
+        Path(command[-1]).write_bytes(b"partial")
+        raise subprocess.TimeoutExpired(command, timeout=60)
+
+    monkeypatch.setattr("src.conversion.ffmpeg_converter.subprocess.run", fake_run)
+
+    with pytest.raises(RuntimeError, match="ffmpeg timed out after 60 seconds") as error:
+        VideoConverter(file_path).run()
+
+    assert "Command" not in str(error.value)
     assert file_path.read_bytes() == b"old"
     assert not (tmp_path / "clip.tmp.mp4").exists()
 

@@ -4,7 +4,6 @@ from pathlib import Path
 from imageio_ffmpeg import get_ffmpeg_exe
 
 from src.config import Config, FFmpegConfig
-from src.logger import log
 
 
 class VideoConverter:
@@ -26,11 +25,8 @@ class VideoConverter:
             )
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
             temp_path.unlink(missing_ok=True)
-            log(
-                f"ffmpeg conversion failed for {self.file_path}: {error}",
-                "warning",
-            )
-            raise RuntimeError("Video conversion failed") from error
+            message = f"Video conversion failed: {self._format_error(error)}"
+            raise RuntimeError(message) from error
 
         temp_path.replace(self.file_path)
         return self.file_path
@@ -65,3 +61,40 @@ class VideoConverter:
         ]
 
         return command
+
+    @classmethod
+    def _format_error(
+        cls,
+        error: subprocess.CalledProcessError | subprocess.TimeoutExpired,
+    ) -> str:
+        if isinstance(error, subprocess.TimeoutExpired):
+            timeout = cls._format_timeout(error.timeout)
+            return f"ffmpeg timed out after {timeout} seconds"
+
+        stderr = cls._format_output(error.stderr)
+        if stderr:
+            return f"ffmpeg exited with code {error.returncode}: {stderr}"
+
+        return f"ffmpeg exited with code {error.returncode}"
+
+    @staticmethod
+    def _format_timeout(timeout: object) -> str:
+        if isinstance(timeout, int | float):
+            return f"{timeout:g}"
+        return str(timeout)
+
+    @staticmethod
+    def _format_output(output: object) -> str | None:
+        if output is None:
+            return None
+
+        if isinstance(output, bytes):
+            text = output.decode(errors="replace")
+        else:
+            text = str(output)
+
+        text = " ".join(text.split())
+        if not text:
+            return None
+
+        return text[:500]
