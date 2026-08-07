@@ -24,7 +24,7 @@ def _make_args(**overrides: object) -> argparse.Namespace:
         "overlay_video_crf": 18,
         "overlay_video_preset": "fast",
         "overlay_video_pixel_format": "yuv420p",
-        "gps_writer_concurrency": 10,
+        "metadata_writer_concurrency": 10,
         "jxl_converter_concurrency": 10,
         "av1_converter_concurrency": 10,
         "no_metadata": False,
@@ -88,6 +88,7 @@ def test_get_cli_args_uses_current_defaults(monkeypatch: pytest.MonkeyPatch) -> 
     assert args.output is None
     assert args.overlay_mode == "on"
     assert args.overlay_applier_concurrency == 10
+    assert args.metadata_writer_concurrency == 10
     assert args.no_metadata is False
     assert args.log_level == logging.CRITICAL + 10
     assert args.video_codec == "h264"
@@ -127,6 +128,22 @@ def test_get_cli_args_accepts_new_and_legacy_video_flags(
     assert args.log_level == logging.DEBUG
 
 
+def test_get_cli_args_accepts_new_and_legacy_metadata_concurrency_flags(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["snap-export", "--metadata-writer-concurrency", "8"],
+    )
+
+    assert get_cli_args().metadata_writer_concurrency == 8
+
+    monkeypatch.setattr(sys, "argv", ["snap-export", "-gwc", "6"])
+
+    assert get_cli_args().metadata_writer_concurrency == 6
+
+
 def test_build_cli_options_maps_public_options_and_inverted_flags() -> None:
     args = _make_args(
         memories_json="memories.json",
@@ -156,7 +173,7 @@ def test_build_cli_options_maps_public_options_and_inverted_flags() -> None:
 def test_build_cli_options_preserves_concurrency_and_quality_values() -> None:
     args = _make_args(
         overlay_applier_concurrency=7,
-        gps_writer_concurrency=8,
+        metadata_writer_concurrency=8,
         jxl_converter_concurrency=9,
         av1_converter_concurrency=6,
         jpeg_quality=87,
@@ -168,7 +185,7 @@ def test_build_cli_options_preserves_concurrency_and_quality_values() -> None:
     options = build_cli_options(args)
 
     assert options["overlay_applier_concurrency"] == 7
-    assert options["gps_writer_concurrency"] == 8
+    assert options["metadata_writer_concurrency"] == 8
     assert options["jxl_converter_concurrency"] == 9
     assert options["av1_converter_concurrency"] == 6
     assert options["jpeg_quality"] == 87

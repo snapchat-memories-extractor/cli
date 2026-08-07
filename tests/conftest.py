@@ -28,7 +28,7 @@ def cli_options() -> dict[str, object]:
         "overlay_video_crf": 18,
         "overlay_video_preset": "fast",
         "overlay_video_pixel_format": "yuv420p",
-        "gps_writer_concurrency": 2,
+        "metadata_writer_concurrency": 2,
         "jxl_converter_concurrency": 2,
         "av1_converter_concurrency": 2,
         "write_metadata": True,

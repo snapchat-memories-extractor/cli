@@ -16,7 +16,7 @@ def build_cli_options(args: argparse.Namespace) -> dict:
         "overlay_video_crf": args.overlay_video_crf,
         "overlay_video_preset": args.overlay_video_preset,
         "overlay_video_pixel_format": args.overlay_video_pixel_format,
-        "gps_writer_concurrency": args.gps_writer_concurrency,
+        "metadata_writer_concurrency": args.metadata_writer_concurrency,
         "jxl_converter_concurrency": args.jxl_converter_concurrency,
         "av1_converter_concurrency": args.av1_converter_concurrency,
         "write_metadata": not args.no_metadata,

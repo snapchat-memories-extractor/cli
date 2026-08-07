@@ -274,13 +274,13 @@ python main.py --reset-state
 </details>
 
 <details>
-<summary><b>Stage Concurrency: --overlay-applier-concurrency / --gps-writer-concurrency / --jxl-converter-concurrency / --av1-converter-concurrency N</b></summary>
+<summary><b>Stage Concurrency: --overlay-applier-concurrency / --metadata-writer-concurrency / --jxl-converter-concurrency / --av1-converter-concurrency N</b></summary>
 
 **What it does:**
 - Controls how many expensive operations can run at once for each processing stage
 - **Default**: `10` for every stage
 - Overlay concurrency applies only when `--overlay-mode` is `on` or `both`
-- GPS writer concurrency applies only when metadata writing is enabled
+- Metadata writer concurrency applies only when metadata writing is enabled
 - JXL converter concurrency applies only when `--jxl` is enabled
 - AV1 converter concurrency applies only when `--video-codec av1` is enabled
 - If a stage is disabled, its concurrency value is ignored
@@ -290,7 +290,7 @@ python main.py --reset-state
 | Stage | Long flag | Short flag | Default |
 |---|---|---|---|
 | Overlay applier | `--overlay-applier-concurrency N` | `-oac N` | `10` |
-| GPS metadata writer | `--gps-writer-concurrency N` | `-gwc N` | `10` |
+| Metadata writer | `--metadata-writer-concurrency N` | `-mwc N` | `10` |
 | JXL converter | `--jxl-converter-concurrency N` | `-jcc N` | `10` |
 | AV1 converter | `--av1-converter-concurrency N` | `-acc N` | `10` |
 
@@ -303,7 +303,7 @@ python main.py
 
 Limit overlay compositing and metadata writing:
 ```bash
-python main.py --overlay-applier-concurrency 4 --gps-writer-concurrency 6
+python main.py --overlay-applier-concurrency 4 --metadata-writer-concurrency 6
 ```
 
 Run more JXL conversions in parallel:
