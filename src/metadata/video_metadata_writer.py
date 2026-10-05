@@ -5,15 +5,17 @@ from imageio_ffmpeg import get_ffmpeg_exe
 
 from src.config import Config
 from src.logger import log
-from src.memories import Memory
+from src.metadata.json_memory_loader import Memory
+
+VIDEO_METADATA_FAILED = "Video metadata write failed"
 
 
 class VideoMetadataWriter:
-    def __init__(self, memory: Memory, file_path: Path) -> None:
+    def __init__(self, memory: Memory) -> None:
         self.memory = memory
-        self.file_path = file_path
+        self.file_path = memory.file_path
 
-    def write_video_metadata(self) -> Path:
+    def run(self) -> None:
         temporary_video_path = self.file_path.with_suffix(".tmp.mp4")
         command = self._build_ffmpeg_command(temporary_video_path)
 
@@ -29,29 +31,28 @@ class VideoMetadataWriter:
             temporary_video_path.replace(self.file_path)
         else:
             self._log_ffmpeg_failure(ffmpeg_run_result, temporary_video_path)
-
-        return self.file_path
+            raise RuntimeError(VIDEO_METADATA_FAILED)
 
     def _build_ffmpeg_command(self, temporary_video_path: Path) -> list[str]:
         metadata_arguments = self._ffmpeg_metadata_arguments()
 
         return [
             get_ffmpeg_exe(),
-            "-i",
-            str(self.file_path),
-            "-c",
-            "copy",
+            "-i", str(self.file_path),
+            "-c", "copy", # Copy streams without re-encoding
             *metadata_arguments,
             str(temporary_video_path),
         ]
 
     def _ffmpeg_metadata_arguments(self) -> list[str]:
-        meta_args = ["-metadata", f"creation_time={self.memory.video_creation_time}"]
+        meta_args = []
 
-        if self.memory.location_coords:
-            latitude, longitude = self.memory.location_coords
-            iso6709 = self._to_iso6709(latitude, longitude)
-            self._extend_meta_args(meta_args, latitude, longitude, iso6709)
+        if self.memory.location_coords is None:
+            return meta_args
+
+        latitude, longitude = self.memory.location_coords
+        iso6709 = self._to_iso6709(latitude, longitude)
+        self._extend_meta_args(meta_args, latitude, longitude, iso6709)
 
         return meta_args
 

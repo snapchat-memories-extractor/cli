@@ -1,0 +1,203 @@
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
+from pathlib import Path
+
+from src.config import Config
+from src.core.state_store import StateStore
+from src.helpers import (
+    handle_phase_keyboard_interrupt,
+    is_image,
+    is_supported_media,
+    log_resumed_stage_skip,
+    scan_output_files,
+)
+from src.logger import log
+from src.logger.phase_stats import PhaseStats
+from src.metadata.image_metadata_writer import ImageMetadataWriter
+from src.metadata.json_memory_loader import Memory, load_json_memories
+from src.metadata.memory_path_matcher import match_memory_paths
+from src.metadata.video_metadata_writer import VideoMetadataWriter
+
+
+class MetadataPhase:
+    def __init__(
+        self,
+        state_store: StateStore,
+    ) -> None:
+        self.state_store = state_store
+        self.stats = PhaseStats("metadata")
+
+    def run(self) -> None:
+        self.stats = PhaseStats("metadata")
+        log("Starting metadata phase.", "info")
+        try:
+            media_files = scan_output_files()
+
+            if not Config.cli_options["write_metadata"]:
+                self._mark_metadata_skipped(media_files)
+                log("Skipping metadata phase (--no-metadata).", "info")
+                return
+
+            if not media_files:
+                log("No media files found to process.", "info")
+                return
+
+            media_files = self._filter_supported_media(media_files)
+            # Filter out media files that failed in previous stage
+            media_files = self._filter_blocked_media(media_files)
+            # Filter out media files that have already been processed in this stage
+            media_files = self._filter_resumable_media(media_files)
+
+            if not media_files:
+                log("No media files eligible for metadata.", "info")
+                return
+
+            memories = load_json_memories()
+            self._mark_metadata_running(media_files)
+            memories, unmatched_files = match_memory_paths(
+                media_files,
+                memories,
+            )
+            self._handle_unmatched_media_files(unmatched_files)
+
+            if not memories:
+                log("No media files matched metadata.", "info")
+                return
+
+            with ThreadPoolExecutor(
+                max_workers=Config.cli_options["metadata_writer_concurrency"]
+            ) as executor:
+                futures = self._submit_memories(executor, memories)
+
+                try:
+                    self._collect_results(futures)
+                except KeyboardInterrupt:
+                    handle_phase_keyboard_interrupt(
+                        futures,
+                        self._collect_results,
+                        "metadata writes",
+                    )
+        finally:
+            self.stats.log_summary()
+            log("Finished metadata phase.", "info")
+
+    def _mark_metadata_running(self, media_files: list[Path]) -> None:
+        for file_path in media_files:
+            self.state_store.mark_running(file_path, "metadata")
+
+    def _handle_unmatched_media_files(self, media_files: list[Path]) -> None:
+        for file_path in media_files:
+            self.state_store.mark_skipped(file_path, "metadata")
+            self.stats.mark(
+                "skipped",
+                file_path,
+                "it was not matched to a JSON memory",
+            )
+
+    def _submit_memories(
+        self,
+        executor: ThreadPoolExecutor,
+        memories: list[Memory],
+    ) -> dict[Future, Path]:
+        futures = {}
+        for memory in memories:
+            file_path = self._memory_file_path(memory)
+            future = executor.submit(self._apply_metadata, memory, file_path)
+            futures[future] = file_path
+
+        return futures
+
+    def _collect_results(self, futures: dict[Future, Path]) -> None:
+        for future in as_completed(futures):
+            file_path = futures[future]
+            try:
+                future.result()
+            except Exception as error:
+                self.state_store.mark_failed(file_path, "metadata", str(error))
+                self.stats.mark("failed", file_path)
+                log(
+                    f"Metadata stage failed for '{file_path}': {error}",
+                    "error",
+                    "META",
+                )
+
+    def _apply_metadata(self, memory: Memory, file_path: Path) -> bool:
+        if Config.cli_options["strict_location"] and memory.location_coords is None:
+            file_path.unlink(missing_ok=True)
+            self.state_store.mark_skipped(file_path, "metadata")
+            self.stats.mark("skipped", file_path, "it had no location data")
+            return False
+
+        self._write_metadata(memory, file_path)
+        self.state_store.mark_done(file_path, "metadata")
+        self.stats.mark("done", file_path)
+        return True
+
+    def _filter_blocked_media(self, media_files: list[Path]) -> list[Path]:
+        eligible = []
+        for file_path in media_files:
+            failed_stage = self.state_store.have_stage_failed(file_path, ("overlay",))
+            if failed_stage:
+                self.state_store.mark_skipped(file_path, "metadata")
+                self.stats.mark("skipped", file_path, f"{failed_stage} failed")
+                log(
+                    f"Skipping metadata for '{file_path}' "
+                    f"because {failed_stage} failed.",
+                    "warning",
+                )
+            else:
+                eligible.append(file_path)
+        return eligible
+
+    def _filter_supported_media(self, media_files: list[Path]) -> list[Path]:
+        eligible = []
+        for file_path in media_files:
+            if is_supported_media(file_path):
+                eligible.append(file_path)
+            else:
+                self.state_store.mark_skipped(file_path, "metadata")
+                self.stats.mark("skipped", file_path, "unsupported media type")
+        return eligible
+
+    def _filter_resumable_media(self, media_files: list[Path]) -> list[Path]:
+        eligible = []
+        for file_path in media_files:
+            status = self.state_store.terminal_status(file_path, "metadata")
+            if status:
+                log_resumed_stage_skip("metadata", str(file_path), status)
+                self.stats.mark(
+                    "skipped",
+                    file_path,
+                    _terminal_status_skip_reason(status),
+                )
+            else:
+                eligible.append(file_path)
+        return eligible
+
+    def _mark_metadata_skipped(self, media_files: list[Path]) -> None:
+        for file_path in media_files:
+            self.state_store.mark_skipped(file_path, "metadata")
+            self.stats.mark(
+                "skipped",
+                file_path,
+                "metadata writing is disabled",
+                log_item=False,
+            )
+
+    @staticmethod
+    def _write_metadata(memory: Memory, file_path: Path) -> None:
+        if is_image(file_path):
+            ImageMetadataWriter(memory).run()
+        else:
+            VideoMetadataWriter(memory).run()
+
+    @staticmethod
+    def _memory_file_path(memory: Memory) -> Path:
+        if memory.file_path is None:
+            raise ValueError
+        return memory.file_path
+
+
+def _terminal_status_skip_reason(status: str) -> str:
+    if status == "failed":
+        return "it failed earlier"
+    return f"it is already {status}"

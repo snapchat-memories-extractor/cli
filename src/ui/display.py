@@ -1,109 +1,152 @@
+from collections.abc import Iterable
+from pathlib import Path
 from time import time
 
-from src.config import Config
-from src.ui.format_time import format_time
-from src.ui.generate_progress_bar import GenerateProgressBar
-from src.ui.stats_manager import StatsManager
+from src.config.defaults import DISPLAY_WIDTH, PROGRESS_BAR_WIDTH
+from src.core.state_store import VALID_STAGES, PipelineStage, StateStore
 
-display_size = 70
+# Just to make the display more readable
+PHASE_LABELS: dict[PipelineStage, str] = {
+    "overlay": "Overlay",
+    "metadata": "Metadata",
+    "conversion": "Conversion",
+}
 
 
 class Display:
-    def __init__(self) -> None:
-        total = StatsManager.total_files
-        current = (
-            StatsManager.successful_downloads_count
-            + StatsManager.failed_downloads_count
+    def __init__(
+        self,
+        state_store: StateStore,
+        stage: PipelineStage,
+        items: Iterable[Path],
+        started_at: float,
+    ) -> None:
+        self.stage = stage
+        self.progress = state_store.summarize_stage(items, stage)
+        self.phase_index = VALID_STAGES.index(stage) + 1
+        self.elapsed_time = max(0, int(time() - started_at))
+        self.progress_bar = self._generate_progress_bar(
+            self.progress.terminal,
+            self.progress.total,
+            bar_length=PROGRESS_BAR_WIDTH,
         )
-        self.remaining = total - current
-        self.progress_bar = GenerateProgressBar(current, total).run()
-        self.percent = (current / total * 100) if total > 0 else 0
-        self.successful = StatsManager.successful_downloads_count
-        self.failed = StatsManager.failed_downloads_count
-        self.elapsed_time = int(time() - StatsManager.start_time)
-        self.eta = self._calculate_eta(current, self.elapsed_time, self.remaining)
+        self.eta = self._calculate_eta(
+            self.progress.terminal,
+            self.elapsed_time,
+            self.progress.remaining,
+        )
 
-    def print_display(self, state: str) -> None:
+    def print_display(self, state: str | None = None) -> None:
         line1 = self._get_first_line()
-        line2 = f"  [{self.progress_bar}] {self.percent:5.1f}%"
+        line2 = self._get_progress_line()
 
         if state == "loading":
             line3, line4 = self._get_loading_display_lines()
         elif state == "interrupted":
-            line3, line4 = self._get_download_interruption_display_lines()
+            line3, line4 = self._get_interruption_display_lines()
         elif state == "finished":
             line3, line4 = self._get_finished_display_lines()
         else:
             line3, line4 = self._get_base_display_lines()
 
-        print(f"╔{'═' * display_size}╗")
-        print(f"║{self._padding_line(line1)}║")
-        print(f"╠{'═' * display_size}╣")
-        print(f"║{self._padding_line(line2)}║")
-        print(f"╠{'═' * display_size}╣")
-        print(f"║{self._padding_line(line3)}║")
-        print(f"║{self._padding_line(line4)}║")
-        print(f"╚{'═' * display_size}╝")
+        print(f"+{'-' * DISPLAY_WIDTH}+")
+        print(f"|{self._padding_line(line1)}|")
+        print(f"+{'-' * DISPLAY_WIDTH}+")
+        print(f"|{self._padding_line(line2)}|")
+        print(f"+{'-' * DISPLAY_WIDTH}+")
+        print(f"|{self._padding_line(line3)}|")
+        print(f"|{self._padding_line(line4)}|")
+        print(f"+{'-' * DISPLAY_WIDTH}+")
 
     def _get_first_line(self) -> str:
-        attempt = str(StatsManager.current_attempt)
-        total_attempts = Config.cli_options["max_attempts"]
         left = " SNAPCHAT MEMORIES DOWNLOADER"
-        right = f"ATTEMPT {attempt} / {total_attempts} "
-        return left.ljust(display_size - len(right)) + right
+        right = f"PHASE {self.phase_index}/{len(VALID_STAGES)} "
+        return left.ljust(DISPLAY_WIDTH - len(right)) + right
+
+    def _get_progress_line(self) -> str:
+        label = PHASE_LABELS[self.stage]
+        return f" {label:<10} [{self.progress_bar}] {self.progress.percent:5.1f}%"
 
     @staticmethod
     def _calculate_eta(current: int, elapsed_time: int, remaining: int) -> str:
+        if remaining == 0:
+            return "0s"
         if current == 0:
             return "calculating..."
 
         avg_time = elapsed_time / current
         eta = avg_time * remaining
-        return format_time(eta)
+        return Display._format_time(eta)
 
     @staticmethod
     def _get_loading_display_lines() -> tuple[str, str]:
-        line3 = "  ⏳ Initializing, scanning your memories..."
-        line4 = "  📋 Preparing download list..."
+        line3 = " Preparing pipeline state."
+        line4 = " Scanning memories folder..."
         return line3, line4
 
-    def _get_download_interruption_display_lines(self) -> tuple[str, str]:
-        line3 = "  ⚠️ Download interrupted by user."
-        line4 = "  ⏳ Processing unfinished downloads, please wait..."
+    @staticmethod
+    def _get_interruption_display_lines() -> tuple[str, str]:
+        line3 = " Processing interrupted by user."
+        line4 = " Finishing in-flight work, please wait..."
         return line3, line4
 
     def _get_finished_display_lines(self) -> tuple[str, str]:
-        line3 = "  ✅ Download process complete."
-        line4 = (
-            f"  📥 Downloaded: {self.successful}  │  "
-            f"❌ Failed: {self.failed}  │  "
-            f"🕐 Total Time: {format_time(self.elapsed_time):>10}"
-        )
+        left = " Processing complete."
+        right = f"Errors: {self.progress.failed} "
+        line3 = left.ljust(DISPLAY_WIDTH - len(right)) + right
+        line4 = self._get_summary_line()
         return line3, line4
 
     def _get_base_display_lines(self) -> tuple[str, str]:
         line3 = (
-            f"  📥 Downloaded: {self.successful}  │  "
-            f"❌ Failed: {self.failed}  │  "
-            f"📁 Remaining: {self.remaining}"
+            f" Done {self.progress.done} | Running {self.progress.running} | "
+            f"Skipped {self.progress.skipped} | Failed {self.progress.failed}"
         )
-        line4 = (
-            f"  🕐  Elapsed: {format_time(self.elapsed_time):>10}  │  "
-            f"⏳ ETA: {self.eta:>10}"
-        )
+        line4 = self._get_summary_line()
         return line3, line4
 
-    def _padding_line(self, content: str, total_width: int = display_size) -> str:
-        visible_width = self._display_width(content)
-        padding_needed = total_width - visible_width
-        return content + (" " * max(0, padding_needed))
-
-    def _display_width(self, text: str) -> int:
-        width = 0
-        for character in text:
-            width += 2 if self._has_double_width(character) else 1
-        return width
+    def _get_summary_line(self) -> str:
+        return (
+            f" Items {self.progress.terminal}/{self.progress.total} | "
+            f"Elapsed {self._format_time(self.elapsed_time):>10} | "
+            f"ETA {self.eta:>10}"
+        )
 
     @staticmethod
-    def _has_double_width(character: str) -> bool:
-        return character in "📥❌📁🕐⏳📋⚠️✅"
+    def _format_time(seconds: float) -> str:
+        if seconds < 60:
+            return f"{seconds:.0f}s"
+        if seconds < 3600:
+            return f"{seconds // 60:.0f}m {seconds % 60:.0f}s"
+        return f"{seconds // 3600:.0f}h {(seconds % 3600) // 60:.0f}m"
+
+    @staticmethod
+    def _generate_progress_bar(
+        current: int,
+        total: int,
+        bar_length: int = PROGRESS_BAR_WIDTH,
+    ) -> str:
+        filled_bar_length = Display._calculate_progress_bar_length(
+            current,
+            total,
+            bar_length,
+        )
+        return "#" * filled_bar_length + "-" * (bar_length - filled_bar_length)
+
+    @staticmethod
+    def _calculate_progress_bar_length(
+        current: int,
+        total: int,
+        bar_length: int,
+    ) -> int:
+        if total == 0:
+            return bar_length
+
+        progress = min(1.0, max(0.0, current / total))
+        return int(bar_length * progress)
+
+    @staticmethod
+    def _padding_line(content: str, total_width: int = DISPLAY_WIDTH) -> str:
+        if len(content) > total_width:
+            return f"{content[: total_width - 3]}..."
+        return content + (" " * (total_width - len(content)))

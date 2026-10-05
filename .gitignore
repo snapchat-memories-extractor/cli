@@ -1,5 +1,6 @@
-﻿downloads/
+output/
 logs/
+.snapchat-memories/
 .venv/
 __pycache__/
 .ruff_cache/

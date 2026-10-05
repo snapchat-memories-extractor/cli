@@ -1,26 +1,27 @@
-from pathlib import Path
+from datetime import UTC
 
 import piexif
 from PIL import Image
 
-from src.media_dispatcher.image_saver import save_image
-from src.memories import Memory
+from src.config import Config
+from src.metadata.json_memory_loader import Memory
 
 
 class ImageMetadataWriter:
-    def __init__(self, memory: Memory, file_path: Path) -> None:
+    def __init__(self, memory: Memory) -> None:
         self.memory = memory
-        self.file_path = file_path
+        self.file_path = memory.file_path
 
         self.exif_metadata = {"0th": {}, "Exif": {}, "GPS": {}}
 
-    def write_image_metadata(self) -> None:
+    def run(self) -> None:
         self._set_datetime_fields()
         self._set_gps_fields()
         self._save_image_with_exif()
 
     def _set_datetime_fields(self) -> None:
-        datetime_bytes = self.memory.exif_datetime.encode("utf-8")
+        captured_at = self.memory.captured_at.astimezone(UTC)
+        datetime_bytes = captured_at.strftime("%Y:%m:%d %H:%M:%S").encode("ascii")
         exif = self.exif_metadata["Exif"]
         zeroth = self.exif_metadata["0th"]
 
@@ -29,9 +30,7 @@ class ImageMetadataWriter:
         zeroth[piexif.ImageIFD.DateTime] = datetime_bytes
 
     def _set_gps_fields(self) -> None:
-        coordinates = self.memory.location_coords
-
-        if not coordinates:
+        if self.memory.location_coords is None:
             return
 
         latitude, longitude = self.memory.location_coords
@@ -72,4 +71,7 @@ class ImageMetadataWriter:
 
     def _save_image_with_exif(self) -> None:
         exif_data_bytes = piexif.dump(self.exif_metadata)
-        save_image(self.file_path, exif_bytes=exif_data_bytes)
+        quality = Config.cli_options["jpeg_quality"]
+
+        with Image.open(self.file_path) as image:
+            image.save(str(self.file_path), quality=quality, exif=exif_data_bytes)
